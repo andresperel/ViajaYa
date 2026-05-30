@@ -1,1 +1,185 @@
-import React, { useState } from 'react'; import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, } from 'react-native'; import API_URL from '../services/api'; export default function LoginScreen({ navigation }) { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const iniciarSesion = async () => { try { const response = await fetch(`${API_URL}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify({ email, password, }), }); const data = await response.json(); if (response.ok) { Alert.alert('Éxito', data.mensaje); navigation.navigate('Home'); } else { Alert.alert('Error', data.mensaje); } } catch (error) { Alert.alert('Error', 'No se pudo conectar al servidor'); } }; return ( <View style={styles.container}> <Text style={styles.logo}> Viaja<Text style={styles.logoColor}>YA</Text> </Text> <Text style={styles.subtitle}> El futuro de tu movilidad comienza aquí </Text> <View style={styles.form}> <Text style={styles.label}> CORREO ELECTRÓNICO </Text> <TextInput style={styles.input} placeholder="admin@gmail.com" placeholderTextColor="#7A7A7A" value={email} onChangeText={setEmail} /> <Text style={styles.label}> CONTRASEÑA </Text> <TextInput style={styles.input} placeholder="1234" placeholderTextColor="#7A7A7A" secureTextEntry value={password} onChangeText={setPassword} /> <TouchableOpacity style={styles.button} onPress={iniciarSesion} > <Text style={styles.buttonText}> Ingresar </Text> </TouchableOpacity> <TouchableOpacity onPress={() => navigation.navigate('Register')} > <Text style={styles.registerText}> Crear cuenta </Text> </TouchableOpacity> </View> </View> ); } const styles = StyleSheet.create({ container: { flex: 1, backgroundColor: '#071B3B', justifyContent: 'center', paddingHorizontal: 25, }, logo: { color: 'white', fontSize: 42, fontWeight: 'bold', textAlign: 'center', marginBottom: 10, }, logoColor: { color: '#00D2B3', }, subtitle: { color: '#B8C1CC', textAlign: 'center', marginBottom: 50, fontSize: 15, }, form: { width: '100%', }, label: { color: '#A9B3C2', marginBottom: 8, fontSize: 12, letterSpacing: 1, }, input: { backgroundColor: '#04122B', color: 'white', borderRadius: 14, paddingHorizontal: 20, paddingVertical: 15, marginBottom: 20, fontSize: 16, borderWidth: 1, borderColor: '#0D2A57', }, button: { marginTop: 15, backgroundColor: '#00D2B3', paddingVertical: 16, borderRadius: 30, alignItems: 'center', }, buttonText: { color: 'white', fontWeight: 'bold', fontSize: 16, }, registerText: { color: 'white', textAlign: 'center', marginTop: 20, }, });
+// Importo React y el hook useState para guardar datos.
+import React, { useState } from 'react';
+
+// Importo los componentes que voy a mostrar en pantalla.
+import {
+  SafeAreaView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
+
+// Este componente representa la pantalla de inicio de sesión.
+export default function LoginScreen({ navigation }) {
+
+  // Guardo el email que escribe el usuario.
+  const [correoIngresado, setCorreoIngresado] = useState('');
+
+  // Guardo la contraseña que escribe el usuario.
+  const [contraseñaIngresada, setContraseñaIngresada] = useState('');
+
+  // Guardo un mensaje para mostrarlo en la pantalla.
+  const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
+
+  // Esta función se ejecuta cuando presiono "Ingresar".
+  const manejarInicioSesion = async () => {
+
+    // Muestro en consola que el botón fue presionado.
+    console.log('Toqué el botón ingresar');
+
+    // Limpio el mensaje anterior.
+    setMensajeEnPantalla('');
+
+    // Verifico que ambos campos estén completos.
+    if (!correoIngresado || !contraseñaIngresada) {
+      setMensajeEnPantalla('Completá todos los campos');
+      return;
+    }
+
+    try {
+
+      // Aviso en pantalla que estoy intentando conectarme.
+      setMensajeEnPantalla('Intentando iniciar sesión...');
+
+      // Envío los datos al backend.
+      const respuestaDelServidor = await fetch(
+        'http://192.168.0.149:3000/login',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: correoIngresado,
+            password: contraseñaIngresada,
+          }),
+        }
+      );
+
+      // Convierto la respuesta a JSON.
+      const datosRecibidos = await respuestaDelServidor.json();
+
+      // Si el login fue exitoso navego al Home.
+      if (respuestaDelServidor.ok) {
+
+        setMensajeEnPantalla('Inicio de sesión exitoso');
+        navigation.navigate('Home');
+
+      } else {
+
+        setMensajeEnPantalla(datosRecibidos.mensaje);
+
+      }
+
+    } catch (error) {
+
+      // Si falla la conexión, muestro el error en pantalla.
+      setMensajeEnPantalla('No pude conectarme con el servidor');
+
+      // También lo muestro en consola para poder revisarlo.
+      console.log(error);
+
+    }
+  };
+
+  return (
+    <SafeAreaView style={estilos.container}>
+
+      <Text style={estilos.titulo}>
+        ViajaYA
+      </Text>
+
+      <TextInput
+        style={estilos.input}
+        placeholder="Correo electrónico"
+        placeholderTextColor="#999"
+        value={correoIngresado}
+        onChangeText={setCorreoIngresado}
+      />
+
+      <TextInput
+        style={estilos.input}
+        placeholder="Contraseña"
+        placeholderTextColor="#999"
+        secureTextEntry
+        value={contraseñaIngresada}
+        onChangeText={setContraseñaIngresada}
+      />
+
+      <TouchableOpacity
+        style={estilos.boton}
+        onPress={manejarInicioSesion}
+      >
+        <Text style={estilos.textoBoton}>
+          Ingresar
+        </Text>
+      </TouchableOpacity>
+
+      <Text style={estilos.mensaje}>
+        {mensajeEnPantalla}
+      </Text>
+
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Register')}
+      >
+        <Text style={estilos.link}>
+          ¿No tenés cuenta? Registrate
+        </Text>
+      </TouchableOpacity>
+
+    </SafeAreaView>
+  );
+}
+
+const estilos = StyleSheet.create({
+
+  container: {
+    flex: 1,
+    backgroundColor: '#041B45',
+    justifyContent: 'center',
+    padding: 24,
+  },
+
+  titulo: {
+    color: 'white',
+    fontSize: 36,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 40,
+  },
+
+  input: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 15,
+  },
+
+  boton: {
+    backgroundColor: '#1DD1A1',
+    padding: 15,
+    borderRadius: 12,
+    marginTop: 10,
+  },
+
+  textoBoton: {
+    textAlign: 'center',
+    color: 'white',
+    fontWeight: 'bold',
+  },
+
+  mensaje: {
+    color: '#1DD1A1',
+    textAlign: 'center',
+    marginTop: 15,
+    fontWeight: 'bold',
+  },
+
+  link: {
+    textAlign: 'center',
+    color: 'white',
+    marginTop: 20,
+  },
+
+});

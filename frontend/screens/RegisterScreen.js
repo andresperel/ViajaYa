@@ -47,7 +47,7 @@ export default function RegisterScreen({ navigation }) {
 
       // Envío los datos al backend para guardarlos en Supabase.
       const respuestaDelServidor = await fetch(
-        'http://192.168.0.149:3000/register',
+        'http://192.168.1.12:3000/register',
         {
           method: 'POST',
           headers: {

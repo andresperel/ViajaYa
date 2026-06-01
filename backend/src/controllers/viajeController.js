@@ -49,7 +49,6 @@ const guardarViaje = async (req, res) => {
     ])
     .select();
 
-  // Si Supabase devuelve error, lo muestro.
   if (errorGuardarViaje) {
     console.log('Error al guardar viaje:', errorGuardarViaje);
 
@@ -59,13 +58,36 @@ const guardarViaje = async (req, res) => {
     });
   }
 
-  // Si salió bien, devuelvo el viaje guardado.
   return res.status(201).json({
     mensaje: 'Viaje guardado correctamente',
     viaje: viajeGuardado,
   });
 };
 
+// Esta función devuelve todos los viajes guardados.
+const obtenerViajes = async (req, res) => {
+
+  const {
+    data: viajes,
+    error: errorViajes,
+  } = await supabase
+    .from('Viaje')
+    .select('*')
+    .order('fechaViaje', { ascending: false });
+
+  if (errorViajes) {
+
+    return res.status(500).json({
+      mensaje: 'Error al obtener viajes',
+      detalle: errorViajes.message,
+    });
+
+  }
+
+  return res.status(200).json(viajes);
+};
+
 module.exports = {
   guardarViaje,
+  obtenerViajes,
 };

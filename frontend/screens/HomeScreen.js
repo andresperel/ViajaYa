@@ -34,8 +34,11 @@ export default function HomeScreen({ navigation }) {
       return;
     }
 
-    // Si los datos están completos, voy a la pantalla de resultados.
-    navigation.navigate('Resultados');
+    // Voy a la pantalla de resultados y le envío los datos ingresados.
+    navigation.navigate('Resultados', {
+      origenIngresado: origenIngresado,
+      destinoIngresado: destinoIngresado,
+    });
   };
 
   return (

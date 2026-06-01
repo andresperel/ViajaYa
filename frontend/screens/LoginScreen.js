@@ -24,7 +24,7 @@ export default function LoginScreen({ navigation }) {
 
   // Esta función se ejecuta cuando presiono "Ingresar".
   const manejarInicioSesion = async () => {
-
+    
     // Muestro en consola que el botón fue presionado.
     console.log('Toqué el botón ingresar');
 
@@ -44,7 +44,7 @@ export default function LoginScreen({ navigation }) {
 
       // Envío los datos al backend.
       const respuestaDelServidor = await fetch(
-        'http://192.168.0.149:3000/login',
+        'http://192.168.1.12:3000/login',
         {
           method: 'POST',
           headers: {

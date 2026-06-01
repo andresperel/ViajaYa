@@ -14,6 +14,8 @@ import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
 import ResultadosScreen from './screens/ResultadosScreen';
 import ViajeConfirmadoScreen from './screens/ViajeConfirmadoScreen';
+import MisViajesScreen from './screens/MisViajesScreen';
+import PerfilScreen from './screens/PerfilScreen';
 
 // Creo el Stack Navigator para manejar las pantallas.
 const Stack = createNativeStackNavigator();
@@ -21,11 +23,8 @@ const Stack = createNativeStackNavigator();
 // Este es el componente principal de la app.
 export default function App() {
   return (
-
-    // NavigationContainer envuelve toda la navegación de la app.
     <NavigationContainer>
 
-      {/* Stack.Navigator contiene todas las pantallas disponibles. */}
       <Stack.Navigator
         initialRouteName="Welcome"
         screenOptions={{
@@ -33,43 +32,56 @@ export default function App() {
         }}
       >
 
-        {/* Pantalla inicial de bienvenida. */}
+        {/* Pantalla de bienvenida */}
         <Stack.Screen
           name="Welcome"
           component={WelcomeScreen}
         />
 
-        {/* Pantalla para iniciar sesión. */}
+        {/* Pantalla de login */}
         <Stack.Screen
           name="Login"
           component={LoginScreen}
         />
 
-        {/* Pantalla para registrarse. */}
+        {/* Pantalla de registro */}
         <Stack.Screen
           name="Register"
           component={RegisterScreen}
         />
 
-        {/* Pantalla principal después del login. */}
+        {/* Pantalla principal */}
         <Stack.Screen
           name="Home"
           component={HomeScreen}
         />
 
-        {/* Pantalla donde se muestran las opciones de viaje. */}
+        {/* Resultados de búsqueda */}
         <Stack.Screen
           name="Resultados"
           component={ResultadosScreen}
         />
 
-        {/* Pantalla que confirma el viaje elegido. */}
+        {/* Confirmación de viaje */}
         <Stack.Screen
           name="ViajeConfirmado"
           component={ViajeConfirmadoScreen}
         />
 
+        {/* Historial de viajes */}
+        <Stack.Screen
+          name="MisViajes"
+          component={MisViajesScreen}
+        />
+
+        {/* Perfil del usuario */}
+        <Stack.Screen
+          name="Perfil"
+          component={PerfilScreen}
+        />
+
       </Stack.Navigator>
+
     </NavigationContainer>
   );
 }

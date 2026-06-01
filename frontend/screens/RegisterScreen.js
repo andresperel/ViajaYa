@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 // Importo los componentes que necesito para armar la pantalla.
 import {
   SafeAreaView,
+  View,
   Text,
   TextInput,
   TouchableOpacity,
@@ -13,41 +14,25 @@ import {
 // Esta pantalla sirve para registrar un usuario nuevo.
 export default function RegisterScreen({ navigation }) {
 
-  // Guardo el nombre que escribe el usuario.
   const [nombreIngresado, setNombreIngresado] = useState('');
-
-  // Guardo el teléfono que escribe el usuario.
   const [telefonoIngresado, setTelefonoIngresado] = useState('');
-
-  // Guardo el correo que escribe el usuario.
   const [correoIngresado, setCorreoIngresado] = useState('');
-
-  // Guardo la contraseña que escribe el usuario.
   const [contraseñaIngresada, setContraseñaIngresada] = useState('');
-
-  // Guardo un mensaje para mostrar errores o avisos en pantalla.
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
 
-  // Esta función se ejecuta cuando presiono "Registrarme".
   const manejarRegistroUsuario = async () => {
-
-    // Limpio el mensaje anterior.
     setMensajeEnPantalla('');
 
-    // Verifico que todos los campos estén completos.
     if (!nombreIngresado || !telefonoIngresado || !correoIngresado || !contraseñaIngresada) {
       setMensajeEnPantalla('Completá todos los campos');
       return;
     }
 
     try {
+      setMensajeEnPantalla('Creando cuenta...');
 
-      // Muestro que estoy intentando registrar al usuario.
-      setMensajeEnPantalla('Registrando usuario...');
-
-      // Envío los datos al backend para guardarlos en Supabase.
       const respuestaDelServidor = await fetch(
-        'http://192.168.1.12:3000/register',
+        'http://localhost:3000/register',
         {
           method: 'POST',
           headers: {
@@ -62,35 +47,23 @@ export default function RegisterScreen({ navigation }) {
         }
       );
 
-      // Convierto la respuesta del backend a JSON.
       const datosRecibidos = await respuestaDelServidor.json();
 
-      // Muestro en consola la respuesta para revisar errores.
-      console.log('Respuesta del backend:', datosRecibidos);
-      console.log('Status:', respuestaDelServidor.status);
-
-      // Si el registro salió bien, vuelvo al login.
       if (respuestaDelServidor.ok) {
-        setMensajeEnPantalla('Usuario registrado correctamente');
+        setMensajeEnPantalla('Cuenta creada correctamente');
 
         setTimeout(() => {
           navigation.navigate('Login');
         }, 1000);
 
       } else {
-
-        // Si falla, muestro el detalle real si existe.
         setMensajeEnPantalla(
           datosRecibidos.detalle || datosRecibidos.mensaje || 'Error al registrar'
         );
       }
 
     } catch (error) {
-
-      // Si no pude conectarme con el backend, muestro un mensaje.
       setMensajeEnPantalla('No pude conectarme con el servidor');
-
-      // También muestro el error en consola para poder revisarlo.
       console.log('Error de conexión:', error);
     }
   };
@@ -98,65 +71,121 @@ export default function RegisterScreen({ navigation }) {
   return (
     <SafeAreaView style={estilos.container}>
 
-      <Text style={estilos.titulo}>
-        Registrarse
-      </Text>
+      <View style={estilos.contenido}>
 
-      <TextInput
-        style={estilos.input}
-        placeholder="Nombre"
-        placeholderTextColor="#999"
-        value={nombreIngresado}
-        onChangeText={setNombreIngresado}
-      />
+        <TouchableOpacity
+          style={estilos.botonVolver}
+          onPress={() => navigation.navigate('Welcome')}
+        >
+          <Text style={estilos.botonVolverTexto}>←</Text>
+        </TouchableOpacity>
 
-      <TextInput
-        style={estilos.input}
-        placeholder="Teléfono"
-        placeholderTextColor="#999"
-        keyboardType="numeric"
-        value={telefonoIngresado}
-        onChangeText={setTelefonoIngresado}
-      />
+        <View style={estilos.progresoBox}>
+          <View style={estilos.progresoActivo} />
+          <View style={estilos.progresoInactivo} />
+          <View style={estilos.progresoInactivo} />
+        </View>
 
-      <TextInput
-        style={estilos.input}
-        placeholder="Correo electrónico"
-        placeholderTextColor="#999"
-        autoCapitalize="none"
-        value={correoIngresado}
-        onChangeText={setCorreoIngresado}
-      />
-
-      <TextInput
-        style={estilos.input}
-        placeholder="Contraseña"
-        placeholderTextColor="#999"
-        secureTextEntry
-        value={contraseñaIngresada}
-        onChangeText={setContraseñaIngresada}
-      />
-
-      <TouchableOpacity
-        style={estilos.boton}
-        onPress={manejarRegistroUsuario}
-      >
-        <Text style={estilos.textoBoton}>
-          Registrarme
+        <Text style={estilos.paso}>
+          Paso 1 de 3
         </Text>
-      </TouchableOpacity>
 
-      <Text style={estilos.mensaje}>
-        {mensajeEnPantalla}
-      </Text>
-
-      <TouchableOpacity
-        onPress={() => navigation.navigate('Login')}
-      >
-        <Text style={estilos.link}>
-          Ya tengo cuenta
+        <Text style={estilos.titulo}>
+          Crear cuenta
         </Text>
-      </TouchableOpacity>
+
+        <Text style={estilos.subtitulo}>
+          Toma menos de un minuto. Sin tarjeta.
+        </Text>
+
+        <View style={estilos.formulario}>
+
+          <Text style={estilos.label}>Nombre completo</Text>
+          <View style={estilos.inputBox}>
+            <Text style={estilos.inputIcono}>👤</Text>
+            <TextInput
+              style={estilos.input}
+              placeholder="María González"
+              placeholderTextColor="#7F8EA3"
+              value={nombreIngresado}
+              onChangeText={setNombreIngresado}
+            />
+          </View>
+
+          <Text style={estilos.label}>Correo electrónico</Text>
+          <View style={estilos.inputBox}>
+            <Text style={estilos.inputIcono}>✉️</Text>
+            <TextInput
+              style={estilos.input}
+              placeholder="maria@ejemplo.com"
+              placeholderTextColor="#7F8EA3"
+              autoCapitalize="none"
+              value={correoIngresado}
+              onChangeText={setCorreoIngresado}
+            />
+          </View>
+
+          <Text style={estilos.label}>Teléfono</Text>
+          <View style={estilos.inputBox}>
+            <Text style={estilos.inputIcono}>📱</Text>
+            <TextInput
+              style={estilos.input}
+              placeholder="+54 11 0000 0000"
+              placeholderTextColor="#7F8EA3"
+              keyboardType="numeric"
+              value={telefonoIngresado}
+              onChangeText={setTelefonoIngresado}
+            />
+          </View>
+
+          <Text style={estilos.label}>Contraseña</Text>
+          <View style={estilos.inputBox}>
+            <Text style={estilos.inputIcono}>🔒</Text>
+            <TextInput
+              style={estilos.input}
+              placeholder="Mínimo 8 caracteres"
+              placeholderTextColor="#7F8EA3"
+              secureTextEntry
+              value={contraseñaIngresada}
+              onChangeText={setContraseñaIngresada}
+            />
+          </View>
+
+          <View style={estilos.terminosBox}>
+            <View style={estilos.checkBox}>
+              <Text style={estilos.checkTexto}>✓</Text>
+            </View>
+
+            <Text style={estilos.terminosTexto}>
+              Acepto los términos y condiciones y la política de privacidad.
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={estilos.botonPrincipal}
+            onPress={manejarRegistroUsuario}
+          >
+            <Text style={estilos.textoBotonPrincipal}>
+              Crear cuenta
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={estilos.mensaje}>
+            {mensajeEnPantalla}
+          </Text>
+
+        </View>
+
+        <TouchableOpacity
+          style={estilos.loginBox}
+          onPress={() => navigation.navigate('Login')}
+        >
+          <Text style={estilos.loginTexto}>
+            ¿Ya tenés cuenta? <Text style={estilos.loginLink}>Iniciar sesión</Text>
+          </Text>
+        </TouchableOpacity>
+
+      </View>
 
     </SafeAreaView>
   );
@@ -166,50 +195,173 @@ const estilos = StyleSheet.create({
 
   container: {
     flex: 1,
-    backgroundColor: '#041B45',
-    justifyContent: 'center',
+    backgroundColor: '#0F1F3A',
+  },
+
+  contenido: {
+    flex: 1,
     padding: 24,
+    paddingTop: 18,
+  },
+
+  botonVolver: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  botonVolverTexto: {
+    color: '#FFFFFF',
+    fontSize: 24,
+  },
+
+  progresoBox: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 32,
+  },
+
+  progresoActivo: {
+    flex: 1,
+    height: 6,
+    borderRadius: 6,
+    backgroundColor: '#22C55E',
+  },
+
+  progresoInactivo: {
+    flex: 1,
+    height: 6,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+  },
+
+  paso: {
+    color: '#B8C1CC',
+    fontSize: 11,
+    marginTop: 12,
   },
 
   titulo: {
-    color: 'white',
-    fontSize: 34,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 35,
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: '900',
+    marginTop: 14,
+  },
+
+  subtitulo: {
+    color: '#B8C1CC',
+    fontSize: 14,
+    marginTop: 8,
+  },
+
+  formulario: {
+    marginTop: 28,
+  },
+
+  label: {
+    color: '#B8C1CC',
+    fontSize: 12,
+    marginLeft: 4,
+    marginBottom: 7,
+    fontWeight: '600',
+  },
+
+  inputBox: {
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 13,
+  },
+
+  inputIcono: {
+    fontSize: 16,
+    marginRight: 10,
   },
 
   input: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 15,
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 15,
+    outlineStyle: 'none',
   },
 
-  boton: {
-    backgroundColor: '#1DD1A1',
-    padding: 15,
-    borderRadius: 12,
-    marginTop: 10,
+  terminosBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 6,
   },
 
-  textoBoton: {
-    textAlign: 'center',
-    color: 'white',
+  checkBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    backgroundColor: '#22C55E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+
+  checkTexto: {
+    color: '#FFFFFF',
     fontWeight: 'bold',
+  },
+
+  terminosTexto: {
+    color: '#B8C1CC',
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
+  },
+
+  botonPrincipal: {
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#22C55E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+    shadowColor: '#22C55E',
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+  },
+
+  textoBotonPrincipal: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 
   mensaje: {
-    color: '#1DD1A1',
+    color: '#22C55E',
     textAlign: 'center',
-    marginTop: 15,
     fontWeight: 'bold',
+    marginTop: 14,
   },
 
-  link: {
+  loginBox: {
+    marginTop: 'auto',
+    paddingTop: 30,
+  },
+
+  loginTexto: {
+    color: '#B8C1CC',
     textAlign: 'center',
-    color: 'white',
-    marginTop: 20,
+    fontSize: 14,
+  },
+
+  loginLink: {
+    color: '#22C55E',
+    fontWeight: 'bold',
   },
 
 });

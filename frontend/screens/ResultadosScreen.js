@@ -13,8 +13,12 @@ import {
 // Esta pantalla muestra las opciones encontradas.
 export default function ResultadosScreen({ navigation, route }) {
 
-  // Recibo el origen y destino que mandé desde Home.
-  const { origenIngresado, destinoIngresado } = route.params;
+  // Recibo el origen, destino y usuario que mandé desde Home.
+  const {
+    origenIngresado,
+    destinoIngresado,
+    usuario,
+  } = route.params;
 
   // Guardo un mensaje para saber si el viaje se está guardando o si hubo error.
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
@@ -30,6 +34,12 @@ export default function ResultadosScreen({ navigation, route }) {
     // Limpio mensajes anteriores.
     setMensajeEnPantalla('');
 
+    // Verifico que exista el usuario logueado antes de guardar el viaje.
+    if (!usuario) {
+      setMensajeEnPantalla('No se encontró el usuario logueado');
+      return;
+    }
+
     try {
 
       // Muestro que estoy guardando el viaje elegido.
@@ -37,7 +47,7 @@ export default function ResultadosScreen({ navigation, route }) {
 
       // Envío el viaje elegido al backend para guardarlo en Supabase.
       const respuestaDelServidor = await fetch(
-        'http://192.168.1.12:3000/viaje',
+        'http://localhost:3000/viaje',
         {
           method: 'POST',
           headers: {
@@ -48,7 +58,10 @@ export default function ResultadosScreen({ navigation, route }) {
             calleDestino: destinoIngresado,
             precioEstimado: precioElegido,
             tiempoEstimado: tiempoElegido,
-            idUsuario: 1,
+
+            // Guardo el viaje con el id real del usuario logueado.
+            idUsuario: usuario.idUsuario,
+
             idTipoServicio: idTipoServicioElegido,
           }),
         }
@@ -62,10 +75,11 @@ export default function ResultadosScreen({ navigation, route }) {
         navigation.navigate('ViajeConfirmado', {
           empresaElegida: empresaElegida,
           precioElegido: precioElegido,
+          usuario: usuario,
         });
       } else {
         setMensajeEnPantalla(
-          datosRecibidos.detalle || datosRecibidos.mensaje
+          datosRecibidos.detalle || datosRecibidos.mensaje || 'Error al guardar viaje'
         );
       }
 

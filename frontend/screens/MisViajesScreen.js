@@ -1,68 +1,89 @@
-// Importo React.
+// Importo React, useEffect y useState para cargar datos.
 import React, { useEffect, useState } from 'react';
 
-// Importo componentes.
 import {
   SafeAreaView,
-  Text,
   View,
-  StyleSheet,
+  Text,
   ScrollView,
+  TouchableOpacity,
+  StyleSheet,
 } from 'react-native';
 
-export default function MisViajesScreen() {
+export default function MisViajesScreen({ navigation, route }) {
 
-  // Guardo los viajes recibidos.
-  const [viajes, setViajes] = useState([]);
+  // Recibo el usuario logueado.
+  const usuario = route?.params?.usuario;
 
-  // Cuando abre la pantalla.
+  const [viajesGuardados, setViajesGuardados] = useState([]);
+  const [mensajeEnPantalla, setMensajeEnPantalla] = useState('Cargando viajes...');
+
   useEffect(() => {
-    obtenerViajes();
+    obtenerMisViajes();
   }, []);
 
-  // Pido los viajes al backend.
-  const obtenerViajes = async () => {
-
+  const obtenerMisViajes = async () => {
     try {
+      if (!usuario) {
+        setMensajeEnPantalla('Volvé a iniciar sesión para ver tus viajes');
+        return;
+      }
 
-      const respuesta = await fetch(
-        'http://192.168.1.12:3000/viajes'
-      );
+      const respuestaDelServidor = await fetch('http://localhost:3000/viajes');
+      const datosRecibidos = await respuestaDelServidor.json();
 
-      const datos = await respuesta.json();
+      if (respuestaDelServidor.ok) {
 
-      setViajes(datos);
+        // Filtro para mostrar solo los viajes del usuario logueado.
+        const viajesDelUsuario = datosRecibidos.filter(
+          (viaje) => viaje.idUsuario === usuario.idUsuario
+        );
+
+        setViajesGuardados(viajesDelUsuario);
+
+        if (viajesDelUsuario.length === 0) {
+          setMensajeEnPantalla('Todavía no tenés viajes guardados');
+        } else {
+          setMensajeEnPantalla('');
+        }
+
+      } else {
+        setMensajeEnPantalla(datosRecibidos.mensaje || 'No pude cargar los viajes');
+      }
 
     } catch (error) {
-
-      console.log(error);
-
+      setMensajeEnPantalla('No pude conectarme con el servidor');
+      console.log('Error al obtener viajes:', error);
     }
-
   };
 
   return (
     <SafeAreaView style={estilos.container}>
 
-      <Text style={estilos.titulo}>
-        Mis viajes
+      <Text style={estilos.titulo}>Mis viajes</Text>
+
+      <Text style={estilos.subtitulo}>
+        Historial de {usuario?.nombre || 'usuario'}
       </Text>
 
-      <ScrollView>
+      {mensajeEnPantalla !== '' && (
+        <Text style={estilos.mensaje}>{mensajeEnPantalla}</Text>
+      )}
 
-        {viajes.map((viaje) => (
+      <ScrollView style={estilos.listaViajes}>
+        {viajesGuardados.map((viaje) => (
+          <View key={viaje.idViaje} style={estilos.tarjetaViaje}>
 
-          <View
-            key={viaje.idViaje}
-            style={estilos.tarjeta}
-          >
-
-            <Text style={estilos.texto}>
-              📍 {viaje.calleOrigen}
+            <Text style={estilos.ruta}>
+              {viaje.calleOrigen} → {viaje.calleDestino}
             </Text>
 
-            <Text style={estilos.texto}>
-              🏁 {viaje.calleDestino}
+            <Text style={estilos.detalle}>
+              Fecha: {viaje.fechaViaje}
+            </Text>
+
+            <Text style={estilos.detalle}>
+              Tiempo estimado: {viaje.tiempoEstimado} min
             </Text>
 
             <Text style={estilos.precio}>
@@ -70,47 +91,79 @@ export default function MisViajesScreen() {
             </Text>
 
           </View>
-
         ))}
-
       </ScrollView>
+
+      <TouchableOpacity
+        style={estilos.boton}
+        onPress={() => navigation.navigate('Home', { usuario })}
+      >
+        <Text style={estilos.textoBoton}>Volver al inicio</Text>
+      </TouchableOpacity>
 
     </SafeAreaView>
   );
 }
 
 const estilos = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: '#041B45',
     padding: 20,
   },
-
   titulo: {
     color: 'white',
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  subtitulo: {
+    color: '#B8C1CC',
+    textAlign: 'center',
+    marginTop: 8,
     marginBottom: 20,
   },
-
-  tarjeta: {
-    backgroundColor: '#0A2A66',
-    padding: 20,
-    borderRadius: 15,
+  mensaje: {
+    color: '#1DD1A1',
+    textAlign: 'center',
+    fontWeight: 'bold',
     marginBottom: 15,
   },
-
-  texto: {
+  listaViajes: {
+    flex: 1,
+  },
+  tarjetaViaje: {
+    backgroundColor: '#0A2A66',
+    padding: 18,
+    borderRadius: 15,
+    marginBottom: 14,
+  },
+  ruta: {
     color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  detalle: {
+    color: '#B8C1CC',
     marginBottom: 5,
   },
-
   precio: {
     color: '#1DD1A1',
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     marginTop: 10,
   },
-
+  boton: {
+    backgroundColor: '#1DD1A1',
+    padding: 15,
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  textoBoton: {
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
 });

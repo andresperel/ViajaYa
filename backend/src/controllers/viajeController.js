@@ -1,10 +1,6 @@
-// Importo la conexión con Supabase.
 const supabase = require('../config/supabase');
 
-// Esta función guarda un viaje elegido por el usuario.
 const guardarViaje = async (req, res) => {
-
-  // Recibo los datos que mando desde el frontend.
   const {
     calleOrigen,
     calleDestino,
@@ -14,20 +10,26 @@ const guardarViaje = async (req, res) => {
     idTipoServicio,
   } = req.body;
 
-  // Verifico que los datos principales estén completos.
-  if (!calleOrigen || !calleDestino || !precioEstimado || !idUsuario || !idTipoServicio) {
+  const idUsuarioNumero = Number(idUsuario);
+  const idTipoServicioNumero = Number(idTipoServicio);
+
+  if (
+    !calleOrigen ||
+    !calleDestino ||
+    !precioEstimado ||
+    !tiempoEstimado ||
+    !idUsuarioNumero ||
+    !idTipoServicioNumero
+  ) {
     return res.status(400).json({
       mensaje: 'Faltan datos para guardar el viaje',
+      datosRecibidos: req.body,
     });
   }
 
-  // Creo un id para el viaje.
   const idNuevoViaje = Date.now();
-
-  // Creo la fecha actual en formato año-mes-día.
   const fechaDeHoy = new Date().toISOString().split('T')[0];
 
-  // Inserto el viaje en la tabla Viaje.
   const {
     data: viajeGuardado,
     error: errorGuardarViaje,
@@ -36,15 +38,15 @@ const guardarViaje = async (req, res) => {
     .insert([
       {
         idViaje: idNuevoViaje,
-        calleOrigen: calleOrigen,
+        calleOrigen,
         alturaOrigen: 0,
-        calleDestino: calleDestino,
+        calleDestino,
         alturaDestino: 0,
-        precioEstimado: precioEstimado,
-        tiempoEstimado: tiempoEstimado,
+        precioEstimado,
+        tiempoEstimado,
         fechaViaje: fechaDeHoy,
-        idUsuario: idUsuario,
-        idTipoServicio: idTipoServicio,
+        idUsuario: idUsuarioNumero,
+        idTipoServicio: idTipoServicioNumero,
       },
     ])
     .select();
@@ -64,9 +66,7 @@ const guardarViaje = async (req, res) => {
   });
 };
 
-// Esta función devuelve todos los viajes guardados.
 const obtenerViajes = async (req, res) => {
-
   const {
     data: viajes,
     error: errorViajes,
@@ -76,12 +76,38 @@ const obtenerViajes = async (req, res) => {
     .order('fechaViaje', { ascending: false });
 
   if (errorViajes) {
-
     return res.status(500).json({
       mensaje: 'Error al obtener viajes',
       detalle: errorViajes.message,
     });
+  }
 
+  return res.status(200).json(viajes);
+};
+
+const obtenerViajesPorUsuario = async (req, res) => {
+  const idUsuario = Number(req.params.idUsuario);
+
+  if (!idUsuario) {
+    return res.status(400).json({
+      mensaje: 'Falta idUsuario',
+    });
+  }
+
+  const {
+    data: viajes,
+    error: errorViajes,
+  } = await supabase
+    .from('Viaje')
+    .select('*')
+    .eq('idUsuario', idUsuario)
+    .order('fechaViaje', { ascending: false });
+
+  if (errorViajes) {
+    return res.status(500).json({
+      mensaje: 'Error al obtener viajes del usuario',
+      detalle: errorViajes.message,
+    });
   }
 
   return res.status(200).json(viajes);
@@ -90,4 +116,5 @@ const obtenerViajes = async (req, res) => {
 module.exports = {
   guardarViaje,
   obtenerViajes,
+  obtenerViajesPorUsuario,
 };

@@ -1,4 +1,3 @@
-// Importo React, useEffect y useState para cargar datos.
 import React, { useEffect, useState } from 'react';
 
 import {
@@ -11,8 +10,6 @@ import {
 } from 'react-native';
 
 export default function MisViajesScreen({ navigation, route }) {
-
-  // Recibo el usuario logueado.
   const usuario = route?.params?.usuario;
 
   const [viajesGuardados, setViajesGuardados] = useState([]);
@@ -24,29 +21,25 @@ export default function MisViajesScreen({ navigation, route }) {
 
   const obtenerMisViajes = async () => {
     try {
-      if (!usuario) {
+      if (!usuario || !usuario.idUsuario) {
         setMensajeEnPantalla('Volvé a iniciar sesión para ver tus viajes');
         return;
       }
 
-      const respuestaDelServidor = await fetch('http://localhost:3000/viajes');
+      const respuestaDelServidor = await fetch(
+        `http://localhost:3000/viajes/usuario/${usuario.idUsuario}`
+      );
+
       const datosRecibidos = await respuestaDelServidor.json();
 
       if (respuestaDelServidor.ok) {
+        setViajesGuardados(datosRecibidos);
 
-        // Filtro para mostrar solo los viajes del usuario logueado.
-        const viajesDelUsuario = datosRecibidos.filter(
-          (viaje) => viaje.idUsuario === usuario.idUsuario
-        );
-
-        setViajesGuardados(viajesDelUsuario);
-
-        if (viajesDelUsuario.length === 0) {
+        if (datosRecibidos.length === 0) {
           setMensajeEnPantalla('Todavía no tenés viajes guardados');
         } else {
           setMensajeEnPantalla('');
         }
-
       } else {
         setMensajeEnPantalla(datosRecibidos.mensaje || 'No pude cargar los viajes');
       }
@@ -86,6 +79,10 @@ export default function MisViajesScreen({ navigation, route }) {
               Tiempo estimado: {viaje.tiempoEstimado} min
             </Text>
 
+            <Text style={estilos.detalle}>
+              Usuario ID: {viaje.idUsuario}
+            </Text>
+
             <Text style={estilos.precio}>
               ${viaje.precioEstimado}
             </Text>
@@ -111,6 +108,7 @@ const estilos = StyleSheet.create({
     backgroundColor: '#041B45',
     padding: 20,
   },
+
   titulo: {
     color: 'white',
     fontSize: 32,
@@ -118,49 +116,58 @@ const estilos = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
   },
+
   subtitulo: {
     color: '#B8C1CC',
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 20,
   },
+
   mensaje: {
     color: '#1DD1A1',
     textAlign: 'center',
     fontWeight: 'bold',
     marginBottom: 15,
   },
+
   listaViajes: {
     flex: 1,
   },
+
   tarjetaViaje: {
     backgroundColor: '#0A2A66',
     padding: 18,
     borderRadius: 15,
     marginBottom: 14,
   },
+
   ruta: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
   },
+
   detalle: {
     color: '#B8C1CC',
     marginBottom: 5,
   },
+
   precio: {
     color: '#1DD1A1',
     fontSize: 22,
     fontWeight: 'bold',
     marginTop: 10,
   },
+
   boton: {
     backgroundColor: '#1DD1A1',
     padding: 15,
     borderRadius: 12,
     marginTop: 12,
   },
+
   textoBoton: {
     color: 'white',
     textAlign: 'center',

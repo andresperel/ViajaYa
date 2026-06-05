@@ -5,12 +5,13 @@ const router = express.Router();
 const {
   guardarViaje,
   obtenerViajes,
+  obtenerViajesPorUsuario,
 } = require('../controllers/viajeController');
 
-// Guarda un viaje.
 router.post('/viaje', guardarViaje);
 
-// Devuelve todos los viajes.
 router.get('/viajes', obtenerViajes);
+
+router.get('/viajes/usuario/:idUsuario', obtenerViajesPorUsuario);
 
 module.exports = router;

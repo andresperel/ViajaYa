@@ -1,51 +1,37 @@
-// Importo React y useState para manejar mensajes en pantalla.
 import React, { useState } from 'react';
 
-// Importo los componentes que voy a usar.
 import {
   SafeAreaView,
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
 
-// Esta pantalla muestra las opciones encontradas.
 export default function ResultadosScreen({ navigation, route }) {
-
-  // Recibo el origen, destino y usuario que mandé desde Home.
   const {
     origenIngresado,
     destinoIngresado,
     usuario,
+    datosViaje,
   } = route.params;
 
-  // Guardo un mensaje para saber si el viaje se está guardando o si hubo error.
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
 
-  // Esta función se ejecuta cuando elijo una opción de viaje.
-  const elegirViaje = async (
-    empresaElegida,
-    precioElegido,
-    tiempoElegido,
-    idTipoServicioElegido
-  ) => {
+  const opciones = datosViaje?.opciones || [];
 
-    // Limpio mensajes anteriores.
+  const elegirViaje = async (oferta) => {
     setMensajeEnPantalla('');
 
-    // Verifico que exista el usuario logueado antes de guardar el viaje.
     if (!usuario) {
       setMensajeEnPantalla('No se encontró el usuario logueado');
       return;
     }
 
     try {
-
-      // Muestro que estoy guardando el viaje elegido.
       setMensajeEnPantalla('Guardando viaje...');
 
-      // Envío el viaje elegido al backend para guardarlo en Supabase.
       const respuestaDelServidor = await fetch(
         'http://localhost:3000/viaje',
         {
@@ -56,26 +42,21 @@ export default function ResultadosScreen({ navigation, route }) {
           body: JSON.stringify({
             calleOrigen: origenIngresado,
             calleDestino: destinoIngresado,
-            precioEstimado: precioElegido,
-            tiempoEstimado: tiempoElegido,
-
-            // Guardo el viaje con el id real del usuario logueado.
+            precioEstimado: oferta.precio,
+            tiempoEstimado: oferta.tiempoEstimado,
             idUsuario: usuario.idUsuario,
-
-            idTipoServicio: idTipoServicioElegido,
+            idTipoServicio: oferta.idTipoServicio,
           }),
         }
       );
 
-      // Convierto la respuesta del backend a JSON.
       const datosRecibidos = await respuestaDelServidor.json();
 
-      // Si el viaje se guardó bien, voy a la pantalla de confirmación.
       if (respuestaDelServidor.ok) {
         navigation.navigate('ViajeConfirmado', {
-          empresaElegida: empresaElegida,
-          precioElegido: precioElegido,
-          usuario: usuario,
+          empresaElegida: oferta.empresa,
+          precioElegido: oferta.precio,
+          usuario,
         });
       } else {
         setMensajeEnPantalla(
@@ -84,11 +65,7 @@ export default function ResultadosScreen({ navigation, route }) {
       }
 
     } catch (error) {
-
-      // Si no pude conectarme con el backend, aviso en pantalla.
       setMensajeEnPantalla('No pude conectarme con el servidor');
-
-      // También muestro el error en consola para poder revisarlo.
       console.log('Error al guardar viaje:', error);
     }
   };
@@ -96,127 +73,313 @@ export default function ResultadosScreen({ navigation, route }) {
   return (
     <SafeAreaView style={estilos.container}>
 
-      <Text style={estilos.titulo}>
-        Opciones disponibles
-      </Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={estilos.contenido}
+      >
 
-      <Text style={estilos.ruta}>
-        {origenIngresado} → {destinoIngresado}
-      </Text>
+        <View style={estilos.header}>
+          <TouchableOpacity
+            style={estilos.botonCircular}
+            onPress={() => navigation.navigate('Home', { usuario })}
+          >
+            <Text style={estilos.flecha}>←</Text>
+          </TouchableOpacity>
 
-      <View style={estilos.tarjetaViaje}>
-        <Text style={estilos.nombreEmpresa}>Didi</Text>
-        <Text style={estilos.precio}>$4200</Text>
-        <Text style={estilos.tiempo}>18 min aprox.</Text>
+          <View style={estilos.headerTexto}>
+            <Text style={estilos.rutaChica}>
+              {origenIngresado} → {destinoIngresado}
+            </Text>
 
-        <TouchableOpacity
-          style={estilos.boton}
-          onPress={() => elegirViaje('Didi', 4200, 18, 2)}
-        >
-          <Text style={estilos.textoBoton}>Elegir</Text>
-        </TouchableOpacity>
-      </View>
+            <Text style={estilos.tituloHeader}>
+              {opciones.length} viajes encontrados · {datosViaje?.distanciaKm} km
+            </Text>
+          </View>
 
-      <View style={estilos.tarjetaViaje}>
-        <Text style={estilos.nombreEmpresa}>Uber</Text>
-        <Text style={estilos.precio}>$4500</Text>
-        <Text style={estilos.tiempo}>15 min aprox.</Text>
+          <View style={estilos.botonCircular}>
+            <Text style={estilos.filtro}>☰</Text>
+          </View>
+        </View>
 
-        <TouchableOpacity
-          style={estilos.boton}
-          onPress={() => elegirViaje('Uber', 4500, 15, 1)}
-        >
-          <Text style={estilos.textoBoton}>Elegir</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={estilos.resumenCard}>
+          <Text style={estilos.resumenTitulo}>Ruta calculada con API real</Text>
+          <Text style={estilos.resumenTexto}>
+            {datosViaje?.origenEncontrado}
+          </Text>
+          <Text style={estilos.resumenTexto}>
+            → {datosViaje?.destinoEncontrado}
+          </Text>
+          <Text style={estilos.resumenDato}>
+            {datosViaje?.distanciaKm} km · {datosViaje?.duracionMin} min aprox.
+          </Text>
+        </View>
 
-      <View style={estilos.tarjetaViaje}>
-        <Text style={estilos.nombreEmpresa}>Cabify</Text>
-        <Text style={estilos.precio}>$4700</Text>
-        <Text style={estilos.tiempo}>20 min aprox.</Text>
+        <View style={estilos.lista}>
+          {opciones.map((oferta, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                estilos.cardOferta,
+                index === 0 && estilos.cardDestacada,
+              ]}
+              activeOpacity={0.85}
+              onPress={() => elegirViaje(oferta)}
+            >
 
-        <TouchableOpacity
-          style={estilos.boton}
-          onPress={() => elegirViaje('Cabify', 4700, 20, 3)}
-        >
-          <Text style={estilos.textoBoton}>Elegir</Text>
-        </TouchableOpacity>
-      </View>
+              <View
+                style={[
+                  estilos.logoEmpresa,
+                  oferta.empresa === 'Uber' && estilos.logoUber,
+                  oferta.empresa === 'Didi' && estilos.logoDidi,
+                  oferta.empresa === 'Cabify' && estilos.logoCabify,
+                ]}
+              >
+                <Text style={estilos.logoTexto}>
+                  {oferta.empresa.charAt(0)}
+                </Text>
+              </View>
 
-      <Text style={estilos.mensaje}>
-        {mensajeEnPantalla}
-      </Text>
+              <View style={estilos.infoOferta}>
+                <Text style={estilos.nombreEmpresa}>
+                  {oferta.empresa}
+                  <Text style={estilos.tipoServicio}> · {oferta.tipo}</Text>
+                </Text>
+
+                <Text style={estilos.detalleTexto}>
+                  {oferta.tiempoEstimado} min viaje · calculado por API
+                </Text>
+
+                {index === 0 && (
+                  <View style={estilos.badge}>
+                    <Text style={estilos.badgeTexto}>💸 Más barato</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={estilos.precioBox}>
+                <Text style={estilos.precio}>
+                  ${oferta.precio.toLocaleString('es-AR')}
+                </Text>
+
+                <View style={estilos.botonElegir}>
+                  <Text style={estilos.textoElegir}>Elegir</Text>
+                </View>
+              </View>
+
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={estilos.mensaje}>
+          {mensajeEnPantalla}
+        </Text>
+
+      </ScrollView>
 
     </SafeAreaView>
   );
 }
 
 const estilos = StyleSheet.create({
-
   container: {
     flex: 1,
-    backgroundColor: '#041B45',
-    padding: 20,
+    backgroundColor: '#0F1F3A',
   },
 
-  titulo: {
-    color: 'white',
-    fontSize: 30,
+  contenido: {
+    padding: 24,
+    paddingBottom: 40,
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+
+  botonCircular: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  flecha: {
+    color: '#FFFFFF',
+    fontSize: 24,
+  },
+
+  filtro: {
+    color: '#FFFFFF',
+    fontSize: 20,
+  },
+
+  headerTexto: {
+    flex: 1,
+    marginHorizontal: 12,
+  },
+
+  rutaChica: {
+    color: '#9CA3AF',
+    fontSize: 12,
+  },
+
+  tituloHeader: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: 'bold',
-    textAlign: 'center',
+    marginTop: 3,
+  },
+
+  resumenCard: {
     marginTop: 20,
-    marginBottom: 10,
+    borderRadius: 22,
+    backgroundColor: 'rgba(34,197,94,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    padding: 16,
   },
 
-  ruta: {
+  resumenTitulo: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+
+  resumenTexto: {
     color: '#B8C1CC',
-    textAlign: 'center',
-    marginBottom: 25,
-    fontSize: 16,
+    fontSize: 12,
+    marginBottom: 3,
   },
 
-  tarjetaViaje: {
-    backgroundColor: '#0A2A66',
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 15,
+  resumenDato: {
+    color: '#22C55E',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
+
+  lista: {
+    marginTop: 18,
+  },
+
+  cardOferta: {
+    minHeight: 96,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    padding: 16,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  cardDestacada: {
+    backgroundColor: 'rgba(34,197,94,0.12)',
+    borderColor: '#22C55E',
+  },
+
+  logoEmpresa: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+
+  logoUber: {
+    backgroundColor: '#000000',
+  },
+
+  logoDidi: {
+    backgroundColor: '#FF7A00',
+  },
+
+  logoCabify: {
+    backgroundColor: '#7B61FF',
+  },
+
+  logoTexto: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+
+  infoOferta: {
+    flex: 1,
   },
 
   nombreEmpresa: {
-    color: 'white',
-    fontSize: 22,
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: 'bold',
   },
 
-  precio: {
-    color: '#1DD1A1',
-    fontSize: 20,
-    marginTop: 10,
-  },
-
-  tiempo: {
+  tipoServicio: {
     color: '#B8C1CC',
-    marginBottom: 15,
-    marginTop: 5,
+    fontWeight: '400',
   },
 
-  boton: {
-    backgroundColor: '#1DD1A1',
-    padding: 12,
-    borderRadius: 10,
+  detalleTexto: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    marginTop: 6,
   },
 
-  textoBoton: {
-    color: 'white',
-    textAlign: 'center',
+  badge: {
+    alignSelf: 'flex-start',
+    marginTop: 9,
+    paddingHorizontal: 9,
+    height: 23,
+    borderRadius: 12,
+    backgroundColor: '#22C55E',
+    justifyContent: 'center',
+  },
+
+  badgeTexto: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+
+  precioBox: {
+    alignItems: 'flex-end',
+    marginLeft: 10,
+  },
+
+  precio: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+
+  botonElegir: {
+    marginTop: 10,
+    height: 30,
+    paddingHorizontal: 14,
+    borderRadius: 15,
+    backgroundColor: '#22C55E',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  textoElegir: {
+    color: '#FFFFFF',
+    fontSize: 11,
     fontWeight: 'bold',
   },
 
   mensaje: {
-    color: '#1DD1A1',
+    color: '#22C55E',
     textAlign: 'center',
-    marginTop: 10,
     fontWeight: 'bold',
+    marginTop: 8,
   },
-
 });

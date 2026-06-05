@@ -1,7 +1,6 @@
 // Importo React y useState para manejar los datos escritos por el usuario.
 import React, { useState } from 'react';
 
-// Importo los componentes que necesito para armar la pantalla.
 import {
   SafeAreaView,
   View,
@@ -12,23 +11,17 @@ import {
   ScrollView,
 } from 'react-native';
 
-// Esta pantalla es el inicio de la app después de iniciar sesión.
 export default function HomeScreen({ navigation, route }) {
 
-  // Recibo el usuario que llegó desde Login.
+  // Recibo el usuario logueado.
   const usuario = route?.params?.usuario;
 
-  // Guardo el lugar desde donde sale el usuario.
   const [origenIngresado, setOrigenIngresado] = useState('');
-
-  // Guardo el destino al que quiere ir el usuario.
   const [destinoIngresado, setDestinoIngresado] = useState('');
-
-  // Guardo un mensaje para avisar si falta completar algo.
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
 
-  // Esta función se ejecuta cuando presiono "Comparar viajes".
-  const manejarBusquedaViaje = () => {
+  // Esta función llama a la API del backend para calcular distancia, tiempo y precios.
+  const manejarBusquedaViaje = async () => {
     setMensajeEnPantalla('');
 
     if (!usuario) {
@@ -41,16 +34,44 @@ export default function HomeScreen({ navigation, route }) {
       return;
     }
 
-    navigation.navigate('Resultados', {
-      origenIngresado: origenIngresado,
-      destinoIngresado: destinoIngresado,
-      usuario: usuario,
-    });
+    try {
+      setMensajeEnPantalla('Calculando viaje...');
+
+      const respuestaDelServidor = await fetch(
+        'http://localhost:3000/calcular-viaje',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            origen: origenIngresado,
+            destino: destinoIngresado,
+          }),
+        }
+      );
+
+      const datosRecibidos = await respuestaDelServidor.json();
+
+      if (respuestaDelServidor.ok) {
+        navigation.navigate('Resultados', {
+          origenIngresado,
+          destinoIngresado,
+          usuario,
+          datosViaje: datosRecibidos,
+        });
+      } else {
+        setMensajeEnPantalla(datosRecibidos.mensaje || 'No pude calcular el viaje');
+      }
+
+    } catch (error) {
+      setMensajeEnPantalla('No pude conectarme con el servidor');
+      console.log('Error al calcular viaje:', error);
+    }
   };
 
   return (
     <SafeAreaView style={estilos.container}>
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={estilos.contenido}
@@ -65,27 +86,21 @@ export default function HomeScreen({ navigation, route }) {
             </View>
 
             <View>
-              <Text style={estilos.saludoChico}>
-                Buenas tardes
-              </Text>
-
+              <Text style={estilos.saludoChico}>Buenas tardes</Text>
               <Text style={estilos.nombreUsuario}>
                 {usuario?.nombre || 'Usuario'}
               </Text>
             </View>
           </View>
 
-          <TouchableOpacity style={estilos.botonCampana}>
+          <View style={estilos.botonCampana}>
             <Text style={estilos.campana}>🔔</Text>
             <View style={estilos.puntoVerde} />
-          </TouchableOpacity>
+          </View>
         </View>
 
         <View style={estilos.hero}>
-          <Text style={estilos.titulo}>
-            ¿A dónde vamos?
-          </Text>
-
+          <Text style={estilos.titulo}>¿A dónde vamos?</Text>
           <Text style={estilos.subtitulo}>
             Compará en segundos. Pagá menos.
           </Text>
@@ -101,10 +116,9 @@ export default function HomeScreen({ navigation, route }) {
           <View style={estilos.inputsBox}>
             <View style={estilos.inputGrupo}>
               <Text style={estilos.labelInput}>ORIGEN</Text>
-
               <TextInput
                 style={estilos.input}
-                placeholder="¿Desde dónde salís?"
+                placeholder="Ej: ORT Yatay Buenos Aires"
                 placeholderTextColor="#7F8EA3"
                 value={origenIngresado}
                 onChangeText={setOrigenIngresado}
@@ -115,10 +129,9 @@ export default function HomeScreen({ navigation, route }) {
 
             <View style={estilos.inputGrupo}>
               <Text style={estilos.labelInput}>DESTINO</Text>
-
               <TextInput
                 style={estilos.input}
-                placeholder="¿A dónde vas?"
+                placeholder="Ej: Alto Palermo Buenos Aires"
                 placeholderTextColor="#7F8EA3"
                 value={destinoIngresado}
                 onChangeText={setDestinoIngresado}
@@ -131,47 +144,22 @@ export default function HomeScreen({ navigation, route }) {
           style={estilos.botonPrincipal}
           onPress={manejarBusquedaViaje}
         >
-          <Text style={estilos.textoBotonPrincipal}>
-            🔎 Comparar viajes
-          </Text>
+          <Text style={estilos.textoBotonPrincipal}>🔎 Comparar viajes</Text>
         </TouchableOpacity>
 
-        <Text style={estilos.mensaje}>
-          {mensajeEnPantalla}
-        </Text>
+        <Text style={estilos.mensaje}>{mensajeEnPantalla}</Text>
 
         <View style={estilos.promoCard}>
-          <View style={estilos.iconoPromo}>
-            <Text style={estilos.iconoPromoTexto}>🏷️</Text>
-          </View>
-
-          <View style={estilos.promoTextoBox}>
-            <Text style={estilos.promoTitulo}>
-              Ahorrá hasta 30% hoy
-            </Text>
-
-            <Text style={estilos.promoSubtitulo}>
-              Comparando entre 3 apps al mismo tiempo
-            </Text>
-          </View>
-
-          <Text style={estilos.rayo}>⚡</Text>
-        </View>
-
-        <View style={estilos.seccionHeader}>
-          <Text style={estilos.seccionTitulo}>
-            Accesos rápidos
+          <Text style={estilos.promoTitulo}>API integrada ✅</Text>
+          <Text style={estilos.promoSubtitulo}>
+            Distancia y tiempo calculados con OpenRouteService
           </Text>
         </View>
 
         <View style={estilos.gridAccesos}>
           <TouchableOpacity
             style={estilos.accesoCard}
-            onPress={() =>
-              navigation.navigate('MisViajes', {
-                usuario: usuario,
-              })
-            }
+            onPress={() => navigation.navigate('MisViajes', { usuario })}
           >
             <Text style={estilos.accesoIcono}>🚗</Text>
             <Text style={estilos.accesoTitulo}>Mis viajes</Text>
@@ -180,11 +168,7 @@ export default function HomeScreen({ navigation, route }) {
 
           <TouchableOpacity
             style={estilos.accesoCard}
-            onPress={() =>
-              navigation.navigate('Perfil', {
-                usuario: usuario,
-              })
-            }
+            onPress={() => navigation.navigate('Perfil', { usuario })}
           >
             <Text style={estilos.accesoIcono}>👤</Text>
             <Text style={estilos.accesoTitulo}>Perfil</Text>
@@ -192,54 +176,16 @@ export default function HomeScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
 
-        <View style={estilos.seccionHeader}>
-          <Text style={estilos.seccionTitulo}>
-            Viajes recientes
-          </Text>
-        </View>
-
-        <View style={estilos.recienteCard}>
-          <View style={estilos.relojBox}>
-            <Text>🕘</Text>
-          </View>
-
-          <View style={estilos.recienteTexto}>
-            <Text style={estilos.recienteLugar}>Aeropuerto Ezeiza</Text>
-            <Text style={estilos.recienteMeta}>Ayer · $5.200</Text>
-          </View>
-
-          <Text style={estilos.pin}>📍</Text>
-        </View>
-
-        <View style={estilos.recienteCard}>
-          <View style={estilos.relojBox}>
-            <Text>🕘</Text>
-          </View>
-
-          <View style={estilos.recienteTexto}>
-            <Text style={estilos.recienteLugar}>Parque Centenario</Text>
-            <Text style={estilos.recienteMeta}>Lun · $1.850</Text>
-          </View>
-
-          <Text style={estilos.pin}>📍</Text>
-        </View>
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Login')}
-        >
-          <Text style={estilos.cerrarSesion}>
-            Cerrar sesión
-          </Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <Text style={estilos.cerrarSesion}>Cerrar sesión</Text>
         </TouchableOpacity>
 
       </ScrollView>
-
     </SafeAreaView>
   );
 }
 
 const estilos = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: '#0F1F3A',
@@ -323,7 +269,6 @@ const estilos = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 32,
     fontWeight: '900',
-    letterSpacing: -0.5,
   },
 
   subtitulo: {
@@ -407,9 +352,6 @@ const estilos = StyleSheet.create({
     backgroundColor: '#22C55E',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#22C55E',
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
   },
 
   textoBotonPrincipal: {
@@ -432,26 +374,6 @@ const estilos = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  iconoPromo: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: '#22C55E',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-
-  iconoPromoTexto: {
-    fontSize: 18,
-  },
-
-  promoTextoBox: {
-    flex: 1,
   },
 
   promoTitulo: {
@@ -462,28 +384,14 @@ const estilos = StyleSheet.create({
 
   promoSubtitulo: {
     color: '#B8C1CC',
-    fontSize: 11,
-    marginTop: 2,
-  },
-
-  rayo: {
-    fontSize: 18,
-  },
-
-  seccionHeader: {
-    marginTop: 26,
-    marginBottom: 12,
-  },
-
-  seccionTitulo: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 12,
+    marginTop: 4,
   },
 
   gridAccesos: {
     flexDirection: 'row',
     gap: 12,
+    marginTop: 24,
   },
 
   accesoCard: {
@@ -512,51 +420,9 @@ const estilos = StyleSheet.create({
     marginTop: 3,
   },
 
-  recienteCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    padding: 14,
-    borderRadius: 18,
-    marginBottom: 10,
-  },
-
-  relojBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-
-  recienteTexto: {
-    flex: 1,
-  },
-
-  recienteLugar: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  recienteMeta: {
-    color: '#B8C1CC',
-    fontSize: 11,
-    marginTop: 2,
-  },
-
-  pin: {
-    fontSize: 16,
-  },
-
   cerrarSesion: {
     color: '#B8C1CC',
     textAlign: 'center',
     marginTop: 24,
   },
-
 });

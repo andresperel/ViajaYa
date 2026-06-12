@@ -135,90 +135,74 @@ export default function RegisterScreen({ navigation }) {
           <Text style={estilos.botonVolverTexto}>←</Text>
         </TouchableOpacity>
 
-        <View style={estilos.progresoBox}>
-          <LinearGradient
-            colors={['#2563EB', '#22C55E']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={estilos.progresoActivo}
-          />
-          <View style={estilos.progresoInactivo} />
-          <View style={estilos.progresoInactivo} />
+        <View style={estilos.headerRegistro}>
+          <View style={estilos.progresoBox}>
+            <LinearGradient
+              colors={['#2563EB', '#22C55E']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={estilos.progresoActivo}
+            />
+            <View style={estilos.progresoInactivo} />
+            <View style={estilos.progresoInactivo} />
+          </View>
+
+          <Text style={estilos.paso}>Paso 1 de 3</Text>
+          <Text style={estilos.titulo}>Crear cuenta</Text>
+          <Text style={estilos.subtitulo}>Toma menos de un minuto. Sin tarjeta.</Text>
         </View>
 
-        <Text style={estilos.paso}>Paso 1 de 3</Text>
-        <Text style={estilos.titulo}>Crear cuenta</Text>
-        <Text style={estilos.subtitulo}>Toma menos de un minuto. Sin tarjeta.</Text>
-
         <View style={estilos.formulario}>
-          <Text style={estilos.label}>Nombre completo</Text>
-          <View style={[estilos.inputBox, errorNombre !== '' && estilos.inputBoxError]}>
-            <Text style={estilos.inputIcono}>👤</Text>
-            <TextInput
-              style={estilos.input}
-              placeholder="María González"
-              placeholderTextColor="#7F8EA3"
-              value={nombreIngresado}
-              onChangeText={(texto) => {
-                setNombreIngresado(texto);
-                setErrorNombre('');
-              }}
-            />
-          </View>
-          {errorNombre !== '' && <Text style={estilos.errorTexto}>{errorNombre}</Text>}
+          <Campo
+            icono="👤"
+            label="Nombre completo"
+            placeholder="María González"
+            value={nombreIngresado}
+            onChangeText={(texto) => {
+              setNombreIngresado(texto);
+              setErrorNombre('');
+            }}
+            error={errorNombre}
+          />
 
-          <Text style={estilos.label}>Correo electrónico</Text>
-          <View style={[estilos.inputBox, errorCorreo !== '' && estilos.inputBoxError]}>
-            <Text style={estilos.inputIcono}>✉️</Text>
-            <TextInput
-              style={estilos.input}
-              placeholder="maria@ejemplo.com"
-              placeholderTextColor="#7F8EA3"
-              autoCapitalize="none"
-              value={correoIngresado}
-              onChangeText={(texto) => {
-                setCorreoIngresado(texto);
-                setErrorCorreo('');
-              }}
-            />
-          </View>
-          {errorCorreo !== '' && <Text style={estilos.errorTexto}>{errorCorreo}</Text>}
+          <Campo
+            icono="✉️"
+            label="Correo electrónico"
+            placeholder="maria@ejemplo.com"
+            value={correoIngresado}
+            onChangeText={(texto) => {
+              setCorreoIngresado(texto);
+              setErrorCorreo('');
+            }}
+            error={errorCorreo}
+            autoCapitalize="none"
+          />
 
-          <Text style={estilos.label}>Teléfono</Text>
-          <View style={[estilos.inputBox, errorTelefono !== '' && estilos.inputBoxError]}>
-            <Text style={estilos.inputIcono}>📱</Text>
-            <TextInput
-              style={estilos.input}
-              placeholder="1122334455"
-              placeholderTextColor="#7F8EA3"
-              keyboardType="numeric"
-              value={telefonoIngresado}
-              onChangeText={(texto) => {
-                setTelefonoIngresado(texto);
-                setErrorTelefono('');
-              }}
-            />
-          </View>
-          {errorTelefono !== '' && <Text style={estilos.errorTexto}>{errorTelefono}</Text>}
+          <Campo
+            icono="📱"
+            label="Teléfono"
+            placeholder="+54 11 0000 0000"
+            value={telefonoIngresado}
+            onChangeText={(texto) => {
+              setTelefonoIngresado(texto);
+              setErrorTelefono('');
+            }}
+            error={errorTelefono}
+            keyboardType="numeric"
+          />
 
-          <Text style={estilos.label}>Contraseña</Text>
-          <View style={[estilos.inputBox, errorContraseña !== '' && estilos.inputBoxError]}>
-            <Text style={estilos.inputIcono}>🔒</Text>
-            <TextInput
-              style={estilos.input}
-              placeholder="Mínimo 4 caracteres"
-              placeholderTextColor="#7F8EA3"
-              secureTextEntry
-              value={contraseñaIngresada}
-              onChangeText={(texto) => {
-                setContraseñaIngresada(texto);
-                setErrorContraseña('');
-              }}
-            />
-          </View>
-          {errorContraseña !== '' && (
-            <Text style={estilos.errorTexto}>{errorContraseña}</Text>
-          )}
+          <Campo
+            icono="🔒"
+            label="Contraseña"
+            placeholder="Mínimo 4 caracteres"
+            value={contraseñaIngresada}
+            onChangeText={(texto) => {
+              setContraseñaIngresada(texto);
+              setErrorContraseña('');
+            }}
+            error={errorContraseña}
+            secureTextEntry
+          />
 
           <View style={estilos.terminosBox}>
             <LinearGradient
@@ -231,7 +215,8 @@ export default function RegisterScreen({ navigation }) {
             </LinearGradient>
 
             <Text style={estilos.terminosTexto}>
-              Acepto los términos y condiciones y la política de privacidad.
+              Acepto los <Text style={estilos.terminosBlanco}>términos y condiciones</Text> y la{' '}
+              <Text style={estilos.terminosBlanco}>política de privacidad</Text>.
             </Text>
           </View>
 
@@ -262,6 +247,32 @@ export default function RegisterScreen({ navigation }) {
   );
 }
 
+function Campo({
+  icono,
+  label,
+  error,
+  ...props
+}) {
+  return (
+    <View style={estilos.campoBox}>
+      <Text style={estilos.label}>{label}</Text>
+
+      <View style={[estilos.inputBox, error !== '' && estilos.inputBoxError]}>
+        <Text style={estilos.inputIcono}>{icono}</Text>
+        <TextInput
+          {...props}
+          style={estilos.input}
+          placeholderTextColor="#7F8EA3"
+        />
+      </View>
+
+      {error !== '' && (
+        <Text style={estilos.errorTexto}>{error}</Text>
+      )}
+    </View>
+  );
+}
+
 const estilos = StyleSheet.create({
   container: {
     flex: 1,
@@ -270,17 +281,18 @@ const estilos = StyleSheet.create({
 
   contenido: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 24,
     paddingTop: 18,
+    paddingBottom: 28,
   },
 
   botonVolver: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.045)',
     borderWidth: 1,
-    borderColor: 'rgba(37,99,235,0.25)',
+    borderColor: 'rgba(255,255,255,0.10)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -290,10 +302,13 @@ const estilos = StyleSheet.create({
     fontSize: 24,
   },
 
+  headerRegistro: {
+    marginTop: 30,
+  },
+
   progresoBox: {
     flexDirection: 'row',
     gap: 6,
-    marginTop: 32,
   },
 
   progresoActivo: {
@@ -310,51 +325,55 @@ const estilos = StyleSheet.create({
   },
 
   paso: {
-    color: '#B8C1CC',
+    color: '#94A3B8',
     fontSize: 11,
-    marginTop: 12,
+    marginTop: 14,
   },
 
   titulo: {
     color: '#FFFFFF',
     fontSize: 32,
+    lineHeight: 36,
     fontWeight: '900',
-    marginTop: 14,
+    marginTop: 10,
+    letterSpacing: -0.7,
   },
 
   subtitulo: {
-    color: '#B8C1CC',
+    color: '#94A3B8',
     fontSize: 14,
     marginTop: 8,
   },
 
   formulario: {
-    marginTop: 28,
+    marginTop: 26,
+  },
+
+  campoBox: {
+    marginBottom: 12,
   },
 
   label: {
     color: '#B8C1CC',
-    fontSize: 12,
+    fontSize: 11,
     marginLeft: 4,
     marginBottom: 7,
     fontWeight: '600',
   },
 
   inputBox: {
-    height: 54,
+    minHeight: 54,
     borderRadius: 18,
     backgroundColor: 'rgba(255,255,255,0.045)',
     borderWidth: 1,
-    borderColor: 'rgba(37,99,235,0.22)',
+    borderColor: 'rgba(255,255,255,0.10)',
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 13,
   },
 
   inputBoxError: {
     borderColor: '#EF4444',
-    marginBottom: 5,
   },
 
   inputIcono: {
@@ -371,16 +390,16 @@ const estilos = StyleSheet.create({
 
   errorTexto: {
     color: '#EF4444',
-    fontSize: 12,
+    fontSize: 11,
     marginLeft: 4,
-    marginBottom: 12,
+    marginTop: 6,
     fontWeight: '600',
   },
 
   terminosBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: 6,
+    marginTop: 4,
   },
 
   checkBox: {
@@ -404,20 +423,21 @@ const estilos = StyleSheet.create({
     flex: 1,
   },
 
+  terminosBlanco: {
+    color: '#FFFFFF',
+  },
+
   botonPrincipal: {
     height: 56,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 24,
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
   },
 
   textoBotonPrincipal: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontWeight: '900',
     fontSize: 16,
   },
 
@@ -430,7 +450,7 @@ const estilos = StyleSheet.create({
 
   loginBox: {
     marginTop: 'auto',
-    paddingTop: 30,
+    paddingTop: 22,
   },
 
   loginTexto: {

@@ -1,7 +1,6 @@
-// Importo React y useState para manejar los datos del formulario.
 import React, { useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 
-// Importo componentes de React Native.
 import {
   SafeAreaView,
   View,
@@ -11,21 +10,12 @@ import {
   StyleSheet,
 } from 'react-native';
 
-// Esta pantalla permite iniciar sesión.
 export default function LoginScreen({ navigation }) {
-
-  // Guardo el correo ingresado.
   const [correoIngresado, setCorreoIngresado] = useState('');
-
-  // Guardo la contraseña ingresada.
   const [contraseñaIngresada, setContraseñaIngresada] = useState('');
-
-  // Guardo mensajes de error o carga.
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
 
-  // Esta función se ejecuta cuando el usuario toca ingresar.
   const manejarInicioSesion = async () => {
-
     setMensajeEnPantalla('');
 
     if (!correoIngresado || !contraseñaIngresada) {
@@ -44,8 +34,8 @@ export default function LoginScreen({ navigation }) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            email: correoIngresado,
-            password: contraseñaIngresada,
+            email: correoIngresado.trim().toLowerCase(),
+            password: contraseñaIngresada.trim(),
           }),
         }
       );
@@ -68,7 +58,6 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <SafeAreaView style={estilos.container}>
-
       <View style={estilos.contenido}>
 
         <TouchableOpacity
@@ -78,8 +67,15 @@ export default function LoginScreen({ navigation }) {
           <Text style={estilos.botonVolverTexto}>←</Text>
         </TouchableOpacity>
 
-        <View style={estilos.logoBox}>
-          <Text style={estilos.logoIcono}>↗</Text>
+        <View style={estilos.logoBoxWrapper}>
+          <LinearGradient
+            colors={['#2563EB', '#22C55E']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={estilos.logoBox}
+          >
+            <Text style={estilos.logoIcono}>↗</Text>
+          </LinearGradient>
         </View>
 
         <View style={estilos.header}>
@@ -122,12 +118,19 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={estilos.botonPrincipal}
             onPress={manejarInicioSesion}
+            activeOpacity={0.85}
           >
-            <Text style={estilos.textoBotonPrincipal}>
-              Ingresar
-            </Text>
+            <LinearGradient
+              colors={['#2563EB', '#22C55E']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={estilos.botonPrincipal}
+            >
+              <Text style={estilos.textoBotonPrincipal}>
+                Ingresar
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
 
           <Text style={estilos.mensaje}>
@@ -162,13 +165,11 @@ export default function LoginScreen({ navigation }) {
         </TouchableOpacity>
 
       </View>
-
     </SafeAreaView>
   );
 }
 
 const estilos = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: '#0F1F3A',
@@ -196,24 +197,23 @@ const estilos = StyleSheet.create({
     fontSize: 24,
   },
 
+  logoBoxWrapper: {
+    alignItems: 'center',
+    marginTop: 34,
+  },
+
   logoBox: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#22C55E',
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 34,
-    shadowColor: '#22C55E',
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
   },
 
   logoIcono: {
-    color: '#0F1F3A',
+    color: '#FFFFFF',
     fontSize: 34,
-    fontWeight: 'bold',
+    fontWeight: '900',
   },
 
   header: {
@@ -249,7 +249,7 @@ const estilos = StyleSheet.create({
   inputBox: {
     height: 56,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.045)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
     paddingHorizontal: 16,
@@ -281,18 +281,14 @@ const estilos = StyleSheet.create({
   botonPrincipal: {
     height: 56,
     borderRadius: 18,
-    backgroundColor: '#22C55E',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 18,
-    shadowColor: '#22C55E',
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
   },
 
   textoBotonPrincipal: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontWeight: '900',
     fontSize: 16,
   },
 
@@ -332,7 +328,7 @@ const estilos = StyleSheet.create({
     flex: 1,
     height: 50,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.045)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
     justifyContent: 'center',
@@ -341,7 +337,7 @@ const estilos = StyleSheet.create({
 
   socialTexto: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '700',
   },
 
   crearCuentaBox: {
@@ -359,5 +355,4 @@ const estilos = StyleSheet.create({
     color: '#22C55E',
     fontWeight: 'bold',
   },
-
 });

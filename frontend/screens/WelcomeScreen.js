@@ -1,7 +1,6 @@
-// Importo React para crear la pantalla inicial.
 import React from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 
-// Importo componentes de React Native para armar una pantalla mobile profesional.
 import {
   SafeAreaView,
   View,
@@ -11,60 +10,101 @@ import {
   Image,
 } from 'react-native';
 
-// Esta es la pantalla inicial de ViajaYA.
 export default function WelcomeScreen({ navigation }) {
   return (
     <SafeAreaView style={estilos.fondo}>
-
-      {/* Uso este contenedor para que en web también se vea como pantalla mobile. */}
       <View style={estilos.pantallaMobile}>
 
-        {/* Parte superior con logo. */}
-        <View style={estilos.zonaLogo}>
+        <View style={estilos.header}>
           <Image
             source={require('../assets/logo-viajaya.png')}
             style={estilos.logoImagen}
             resizeMode="contain"
           />
 
-          <Text style={estilos.frasePrincipal}>
-            Tu viaje, al instante.
-          </Text>
-
-          <Text style={estilos.fraseSecundaria}>
-            Compará opciones. Elegí mejor. Viajá simple.
-          </Text>
+          <View style={estilos.versionBox}>
+            <Text style={estilos.versionTexto}>✨ v2.0</Text>
+          </View>
         </View>
 
-        {/* Simulo una ciudad/mapa con líneas sutiles para que no quede vacío. */}
-        <View style={estilos.zonaVisual}>
-          <View style={estilos.lineaMapaUno} />
-          <View style={estilos.lineaMapaDos} />
-          <View style={estilos.puntoMapa} />
-          <Text style={estilos.textoVisual}>
-            Encontrá la mejor opción para moverte por la ciudad.
-          </Text>
+        <View style={estilos.heroCard}>
+          <LinearGradient
+            colors={['rgba(37,99,235,0.32)', 'rgba(34,197,94,0.22)']}
+            start={{ x: 0, y: 1 }}
+            end={{ x: 1, y: 0 }}
+            style={estilos.heroFondo}
+          />
+
+          <View style={estilos.cuadricula} />
+
+          <View style={estilos.rutaUno} />
+          <View style={estilos.rutaDos} />
+
+          <View style={estilos.puntoOrigen} />
+          <View style={estilos.puntoDestino} />
+
+          <View style={estilos.tarjetaPrecio}>
+            <Text style={estilos.labelPrecio}>MEJOR PRECIO HOY</Text>
+
+            <View style={estilos.precioFila}>
+              <View>
+                <Text style={estilos.precio}>
+                  $3.450 <Text style={estilos.tiempo}>· 12 min</Text>
+                </Text>
+
+                <Text style={estilos.proveedor}>
+                  Uber · UberX
+                </Text>
+              </View>
+
+              <LinearGradient
+                colors={['#2563EB', '#22C55E']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={estilos.botonFlecha}
+              >
+                <Text style={estilos.flecha}>↗</Text>
+              </LinearGradient>
+            </View>
+          </View>
         </View>
 
-        {/* Botones principales. */}
-        <View style={estilos.zonaBotones}>
-          <TouchableOpacity
-            style={estilos.botonPrincipal}
-            onPress={() => navigation.navigate('Login')}
-          >
-            <Text style={estilos.textoBotonPrincipal}>
-              Iniciar sesión
-            </Text>
-          </TouchableOpacity>
+        <View style={estilos.bottom}>
+          <Text style={estilos.titulo}>
+            Movete <Text style={estilos.tituloGradiente}>mejor</Text>.
+          </Text>
 
-          <TouchableOpacity
-            style={estilos.botonSecundario}
-            onPress={() => navigation.navigate('Register')}
-          >
-            <Text style={estilos.textoBotonSecundario}>
-              Crear cuenta
-            </Text>
-          </TouchableOpacity>
+          <Text style={estilos.subtitulo}>
+            Compará Uber, Didi y Cabify en una sola búsqueda.
+          </Text>
+
+          <View style={estilos.zonaBotones}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('Register')}
+            >
+              <LinearGradient
+                colors={['#2563EB', '#22C55E']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={estilos.botonPrincipal}
+              >
+                <Text style={estilos.textoBotonPrincipal}>
+                  Comenzar
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={estilos.botonSecundario}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('Login')}
+            >
+              <Text style={estilos.textoBotonSecundario}>
+                Ya tengo cuenta
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
       </View>
@@ -73,10 +113,9 @@ export default function WelcomeScreen({ navigation }) {
 }
 
 const estilos = StyleSheet.create({
-
   fondo: {
     flex: 1,
-    backgroundColor: '#071A33',
+    backgroundColor: '#0F1F3A',
     alignItems: 'center',
   },
 
@@ -84,124 +123,220 @@ const estilos = StyleSheet.create({
     flex: 1,
     width: '100%',
     maxWidth: 430,
-    backgroundColor: '#071A33',
-    paddingHorizontal: 26,
-    paddingVertical: 34,
-    justifyContent: 'space-between',
+    backgroundColor: '#0F1F3A',
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 34,
   },
 
-  zonaLogo: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 30,
   },
 
   logoImagen: {
-    width: 250,
-    height: 110,
-    marginBottom: 22,
+    width: 128,
+    height: 46,
   },
 
-  frasePrincipal: {
-    color: 'white',
-    fontSize: 26,
+  versionBox: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+  },
+
+  versionTexto: {
+    color: '#B8C1CC',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  heroCard: {
+    flex: 1,
+    marginTop: 38,
+    borderRadius: 36,
+    overflow: 'hidden',
+    backgroundColor: '#152A4D',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    position: 'relative',
+    minHeight: 360,
+  },
+
+  heroFondo: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  cuadricula: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+
+  rutaUno: {
+    position: 'absolute',
+    width: 390,
+    height: 4,
+    borderRadius: 4,
+    backgroundColor: '#2563EB',
+    transform: [{ rotate: '-39deg' }],
+    left: -42,
+    bottom: 146,
+  },
+
+  rutaDos: {
+    position: 'absolute',
+    width: 270,
+    height: 4,
+    borderRadius: 4,
+    backgroundColor: '#22C55E',
+    transform: [{ rotate: '-45deg' }],
+    right: -32,
+    top: 106,
+  },
+
+  puntoOrigen: {
+    position: 'absolute',
+    left: 38,
+    bottom: 92,
+    width: 15,
+    height: 15,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 4,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+
+  puntoDestino: {
+    position: 'absolute',
+    right: 32,
+    top: 42,
+    width: 15,
+    height: 15,
+    borderRadius: 8,
+    backgroundColor: '#22C55E',
+    borderWidth: 4,
+    borderColor: 'rgba(34,197,94,0.25)',
+  },
+
+  tarjetaPrecio: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    padding: 16,
+  },
+
+  labelPrecio: {
+    color: '#94A3B8',
+    fontSize: 10,
     fontWeight: '800',
-    textAlign: 'center',
-    letterSpacing: -0.5,
+    letterSpacing: 1.6,
   },
 
-  fraseSecundaria: {
-    color: '#8EA4BE',
+  precioFila: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  precio: {
+    color: '#FFFFFF',
+    fontSize: 26,
+    fontWeight: '900',
+  },
+
+  tiempo: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  proveedor: {
+    color: '#94A3B8',
+    fontSize: 11,
+    marginTop: 6,
+  },
+
+  botonFlecha: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  flecha: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '900',
+  },
+
+  bottom: {
+    paddingTop: 32,
+  },
+
+  titulo: {
+    color: '#FFFFFF',
+    fontSize: 40,
+    lineHeight: 42,
+    fontWeight: '900',
+    letterSpacing: -1,
+  },
+
+  tituloGradiente: {
+    color: '#22C55E',
+  },
+
+  subtitulo: {
+    color: '#94A3B8',
     fontSize: 15,
-    textAlign: 'center',
     marginTop: 12,
     lineHeight: 22,
-  },
-
-  zonaVisual: {
-    height: 230,
-    borderRadius: 32,
-    backgroundColor: '#0B2447',
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#113A70',
-  },
-
-  lineaMapaUno: {
-    position: 'absolute',
-    width: 330,
-    height: 2,
-    backgroundColor: '#1DD1A1',
-    opacity: 0.28,
-    transform: [{ rotate: '-28deg' }],
-    top: 75,
-    left: -40,
-  },
-
-  lineaMapaDos: {
-    position: 'absolute',
-    width: 280,
-    height: 2,
-    backgroundColor: '#2F80ED',
-    opacity: 0.35,
-    transform: [{ rotate: '34deg' }],
-    top: 115,
-    right: -40,
-  },
-
-  puntoMapa: {
-    position: 'absolute',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#1DD1A1',
-    top: 95,
-    alignSelf: 'center',
-    shadowColor: '#1DD1A1',
-    shadowOpacity: 0.8,
-    shadowRadius: 12,
-  },
-
-  textoVisual: {
-    color: 'white',
-    fontSize: 21,
-    fontWeight: '700',
-    lineHeight: 28,
+    maxWidth: 310,
   },
 
   zonaBotones: {
-    marginBottom: 18,
+    marginTop: 28,
+    gap: 12,
   },
 
   botonPrincipal: {
-    backgroundColor: '#1DD1A1',
-    height: 58,
+    height: 56,
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
   },
 
   textoBotonPrincipal: {
-    color: '#071A33',
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '900',
   },
 
   botonSecundario: {
-    height: 58,
+    height: 56,
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#1DD1A1',
+    backgroundColor: 'rgba(255,255,255,0.045)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
 
   textoBotonSecundario: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
   },
-
 });

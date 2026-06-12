@@ -102,62 +102,47 @@ export default function HomeScreen({ navigation, route }) {
         </View>
 
         <View style={estilos.hero}>
-          <View style={estilos.badgeHero}>
-            <Text style={estilos.badgeHeroTexto}>✨ Comparador inteligente</Text>
-          </View>
-
-          <Text style={estilos.titulo}>¿A dónde vamos hoy?</Text>
-
+          <Text style={estilos.titulo}>¿A dónde vamos?</Text>
           <Text style={estilos.subtitulo}>
-            Compará Uber, Didi y Cabify en segundos.
+            Compará en segundos. Pagá menos.
           </Text>
         </View>
 
-        <LinearGradient
-          colors={['rgba(37,99,235,0.80)', 'rgba(34,197,94,0.80)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={estilos.cardBorde}
-        >
-          <View style={estilos.cardBusqueda}>
-            <View style={estilos.lineaMapa}>
-              <View style={estilos.puntoOrigen} />
-              <View style={estilos.lineaVertical} />
-              <View style={estilos.puntoDestino} />
+        <View style={estilos.cardBusqueda}>
+          <View style={estilos.lineaMapa}>
+            <View style={estilos.puntoOrigen} />
+            <View style={estilos.lineaVertical} />
+            <View style={estilos.puntoDestino} />
+          </View>
+
+          <View style={estilos.inputsBox}>
+            <View style={estilos.inputGrupo}>
+              <Text style={estilos.labelInput}>ORIGEN</Text>
+              <TextInput
+                style={estilos.input}
+                placeholder="Ej: ORT Yatay Buenos Aires"
+                placeholderTextColor="#7F8EA3"
+                value={origenIngresado}
+                onChangeText={setOrigenIngresado}
+              />
             </View>
 
-            <View style={estilos.inputsBox}>
-              <View style={estilos.inputGrupo}>
-                <Text style={estilos.labelInput}>ORIGEN</Text>
-                <TextInput
-                  style={estilos.input}
-                  placeholder="Ej: ORT Yatay Buenos Aires"
-                  placeholderTextColor="#7F8EA3"
-                  value={origenIngresado}
-                  onChangeText={setOrigenIngresado}
-                />
-              </View>
+            <View style={estilos.separador} />
 
-              <View style={estilos.separador} />
-
-              <View style={estilos.inputGrupo}>
-                <Text style={estilos.labelInput}>DESTINO</Text>
-                <TextInput
-                  style={estilos.input}
-                  placeholder="Ej: Alto Palermo Buenos Aires"
-                  placeholderTextColor="#7F8EA3"
-                  value={destinoIngresado}
-                  onChangeText={setDestinoIngresado}
-                />
-              </View>
+            <View style={estilos.inputGrupo}>
+              <Text style={estilos.labelInput}>DESTINO</Text>
+              <TextInput
+                style={estilos.input}
+                placeholder="Ej: Alto Palermo Buenos Aires"
+                placeholderTextColor="#7F8EA3"
+                value={destinoIngresado}
+                onChangeText={setDestinoIngresado}
+              />
             </View>
           </View>
-        </LinearGradient>
+        </View>
 
-        <TouchableOpacity
-          onPress={manejarBusquedaViaje}
-          activeOpacity={0.85}
-        >
+        <TouchableOpacity onPress={manejarBusquedaViaje} activeOpacity={0.85}>
           <LinearGradient
             colors={['#2563EB', '#22C55E']}
             start={{ x: 0, y: 0 }}
@@ -173,7 +158,7 @@ export default function HomeScreen({ navigation, route }) {
         <Text style={estilos.mensaje}>{mensajeEnPantalla}</Text>
 
         <LinearGradient
-          colors={['rgba(37,99,235,0.18)', 'rgba(34,197,94,0.14)']}
+          colors={['rgba(37,99,235,0.18)', 'rgba(34,197,94,0.16)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={estilos.promoCard}
@@ -183,20 +168,23 @@ export default function HomeScreen({ navigation, route }) {
           </View>
 
           <View style={estilos.promoTextoBox}>
-            <Text style={estilos.promoTitulo}>API integrada ✅</Text>
+            <Text style={estilos.promoTitulo}>Ahorrá hasta 30% hoy</Text>
             <Text style={estilos.promoSubtitulo}>
-              Distancia y tiempo calculados con OpenRouteService
+              Comparando entre 3 apps al mismo tiempo
             </Text>
           </View>
 
           <Text style={estilos.rayo}>⚡</Text>
         </LinearGradient>
 
+        <View style={estilos.seccionHeader}>
+          <Text style={estilos.seccionTitulo}>Accesos rápidos</Text>
+        </View>
+
         <View style={estilos.gridAccesos}>
           <TouchableOpacity
             style={estilos.accesoCard}
             onPress={() => navigation.navigate('MisViajes', { usuario })}
-            activeOpacity={0.85}
           >
             <View style={estilos.accesoIconoBox}>
               <Text style={estilos.accesoIcono}>🚗</Text>
@@ -208,7 +196,6 @@ export default function HomeScreen({ navigation, route }) {
           <TouchableOpacity
             style={estilos.accesoCard}
             onPress={() => navigation.navigate('Perfil', { usuario })}
-            activeOpacity={0.85}
           >
             <View style={estilos.accesoIconoBox}>
               <Text style={estilos.accesoIcono}>👤</Text>
@@ -216,6 +203,32 @@ export default function HomeScreen({ navigation, route }) {
             <Text style={estilos.accesoTitulo}>Perfil</Text>
             <Text style={estilos.accesoSubtitulo}>Mi cuenta</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={estilos.seccionHeader}>
+          <Text style={estilos.seccionTitulo}>Viajes recientes</Text>
+        </View>
+
+        <View style={estilos.recienteCard}>
+          <View style={estilos.relojBox}>
+            <Text>🕘</Text>
+          </View>
+          <View style={estilos.recienteTexto}>
+            <Text style={estilos.recienteLugar}>Aeropuerto Ezeiza</Text>
+            <Text style={estilos.recienteMeta}>Ayer · $5.200</Text>
+          </View>
+          <Text style={estilos.pin}>📍</Text>
+        </View>
+
+        <View style={estilos.recienteCard}>
+          <View style={estilos.relojBox}>
+            <Text>🕘</Text>
+          </View>
+          <View style={estilos.recienteTexto}>
+            <Text style={estilos.recienteLugar}>Parque Centenario</Text>
+            <Text style={estilos.recienteMeta}>Lun · $1.850</Text>
+          </View>
+          <Text style={estilos.pin}>📍</Text>
         </View>
 
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
@@ -251,15 +264,12 @@ const estilos = StyleSheet.create({
   },
 
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
   },
 
   avatarTexto: {
@@ -280,12 +290,12 @@ const estilos = StyleSheet.create({
   },
 
   botonCampana: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(37,99,235,0.22)',
+    borderColor: 'rgba(255,255,255,0.10)',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -296,68 +306,39 @@ const estilos = StyleSheet.create({
   },
 
   puntoVerde: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#22C55E',
     position: 'absolute',
     top: 9,
     right: 9,
-    shadowColor: '#22C55E',
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
   },
 
   hero: {
     marginTop: 34,
   },
 
-  badgeHero: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginBottom: 14,
-  },
-
-  badgeHeroTexto: {
-    color: '#B8C1CC',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-
   titulo: {
     color: '#FFFFFF',
-    fontSize: 31,
+    fontSize: 32,
     fontWeight: '900',
-    letterSpacing: -0.5,
   },
 
   subtitulo: {
     color: '#B8C1CC',
     fontSize: 15,
-    marginTop: 7,
-  },
-
-  cardBorde: {
-    marginTop: 24,
-    borderRadius: 28,
-    padding: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 18,
+    marginTop: 6,
   },
 
   cardBusqueda: {
-    backgroundColor: '#152A4D',
-    borderRadius: 27,
+    marginTop: 22,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    borderRadius: 26,
     padding: 18,
     flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
   },
 
   lineaMapa: {
@@ -369,8 +350,8 @@ const estilos = StyleSheet.create({
   },
 
   puntoOrigen: {
-    width: 10,
-    height: 10,
+    width: 9,
+    height: 9,
     borderRadius: 5,
     backgroundColor: '#FFFFFF',
   },
@@ -379,13 +360,13 @@ const estilos = StyleSheet.create({
     width: 1,
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.20)',
-    marginVertical: 8,
+    marginVertical: 6,
   },
 
   puntoDestino: {
-    width: 11,
-    height: 11,
-    borderRadius: 3,
+    width: 10,
+    height: 10,
+    borderRadius: 2,
     backgroundColor: '#22C55E',
   },
 
@@ -398,17 +379,16 @@ const estilos = StyleSheet.create({
   },
 
   labelInput: {
-    color: '#94A3B8',
+    color: '#9CA3AF',
     fontSize: 10,
-    letterSpacing: 1.5,
-    marginBottom: 6,
-    fontWeight: '700',
+    letterSpacing: 1.3,
+    marginBottom: 5,
   },
 
   input: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
     padding: 0,
     outlineStyle: 'none',
   },
@@ -416,24 +396,21 @@ const estilos = StyleSheet.create({
   separador: {
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.10)',
-    marginVertical: 6,
+    marginVertical: 5,
   },
 
   botonPrincipal: {
-    marginTop: 18,
-    height: 58,
-    borderRadius: 19,
+    marginTop: 16,
+    height: 56,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
   },
 
   textoBotonPrincipal: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '900',
+    fontWeight: 'bold',
   },
 
   mensaje: {
@@ -445,7 +422,7 @@ const estilos = StyleSheet.create({
 
   promoCard: {
     marginTop: 24,
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
     padding: 16,
@@ -454,10 +431,10 @@ const estilos = StyleSheet.create({
   },
 
   iconoPromo: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: '#22C55E',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -473,43 +450,53 @@ const estilos = StyleSheet.create({
 
   promoTitulo: {
     color: '#FFFFFF',
-    fontWeight: '900',
+    fontWeight: 'bold',
     fontSize: 14,
   },
 
   promoSubtitulo: {
     color: '#B8C1CC',
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 11,
+    marginTop: 2,
   },
 
   rayo: {
-    fontSize: 19,
+    fontSize: 18,
+  },
+
+  seccionHeader: {
+    marginTop: 26,
+    marginBottom: 12,
+  },
+
+  seccionTitulo: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
 
   gridAccesos: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 24,
   },
 
   accesoCard: {
     flex: 1,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.045)',
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
     padding: 16,
   },
 
   accesoIconoBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 16,
+    width: 38,
+    height: 38,
+    borderRadius: 14,
     backgroundColor: 'rgba(37,99,235,0.18)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
 
   accesoIcono: {
@@ -518,7 +505,7 @@ const estilos = StyleSheet.create({
 
   accesoTitulo: {
     color: '#FFFFFF',
-    fontWeight: '900',
+    fontWeight: 'bold',
     fontSize: 14,
   },
 
@@ -528,9 +515,50 @@ const estilos = StyleSheet.create({
     marginTop: 3,
   },
 
+  recienteCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    padding: 14,
+    borderRadius: 18,
+    marginBottom: 10,
+  },
+
+  relojBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  recienteTexto: {
+    flex: 1,
+  },
+
+  recienteLugar: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  recienteMeta: {
+    color: '#B8C1CC',
+    fontSize: 11,
+    marginTop: 2,
+  },
+
+  pin: {
+    fontSize: 16,
+  },
+
   cerrarSesion: {
     color: '#B8C1CC',
     textAlign: 'center',
-    marginTop: 26,
+    marginTop: 24,
   },
 });

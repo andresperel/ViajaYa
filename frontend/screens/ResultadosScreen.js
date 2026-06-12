@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import {
   SafeAreaView,
@@ -70,9 +71,15 @@ export default function ResultadosScreen({ navigation, route }) {
     }
   };
 
+  const obtenerBadge = (index) => {
+    if (index === 0) return '💸 Más barato';
+    if (index === 1) return '⚡ Más rápido';
+    if (index === 2) return '🏆 Mejor valorado';
+    return '';
+  };
+
   return (
     <SafeAreaView style={estilos.container}>
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={estilos.contenido}
@@ -87,11 +94,11 @@ export default function ResultadosScreen({ navigation, route }) {
           </TouchableOpacity>
 
           <View style={estilos.headerTexto}>
-            <Text style={estilos.rutaChica}>
+            <Text style={estilos.rutaChica} numberOfLines={1}>
               {origenIngresado} → {destinoIngresado}
             </Text>
 
-            <Text style={estilos.tituloHeader}>
+            <Text style={estilos.tituloHeader} numberOfLines={1}>
               {opciones.length} viajes encontrados · {datosViaje?.distanciaKm} km
             </Text>
           </View>
@@ -101,71 +108,71 @@ export default function ResultadosScreen({ navigation, route }) {
           </View>
         </View>
 
-        <View style={estilos.resumenCard}>
-          <Text style={estilos.resumenTitulo}>Ruta calculada con API real</Text>
-          <Text style={estilos.resumenTexto}>
-            {datosViaje?.origenEncontrado}
-          </Text>
-          <Text style={estilos.resumenTexto}>
-            → {datosViaje?.destinoEncontrado}
-          </Text>
-          <Text style={estilos.resumenDato}>
-            {datosViaje?.distanciaKm} km · {datosViaje?.duracionMin} min aprox.
-          </Text>
+        <View style={estilos.mapaCard}>
+          <LinearGradient
+            colors={['rgba(37,99,235,0.35)', 'rgba(34,197,94,0.22)']}
+            start={{ x: 0, y: 1 }}
+            end={{ x: 1, y: 0 }}
+            style={estilos.mapaFondo}
+          />
+
+          <View style={estilos.gridMapa} />
+
+          <View style={estilos.rutaLineaUno} />
+          <View style={estilos.rutaLineaDos} />
+
+          <View style={estilos.pinOrigen} />
+          <View style={estilos.pinDestino} />
+
+          <View style={estilos.mapaInfo}>
+            <Text style={estilos.mapaTitulo}>Ruta calculada con API real</Text>
+            <Text style={estilos.mapaTexto} numberOfLines={1}>
+              {datosViaje?.distanciaKm} km · {datosViaje?.duracionMin} min aprox.
+            </Text>
+          </View>
+        </View>
+
+        <View style={estilos.chipsBox}>
+          {['Todos', 'Más barato', 'Más rápido', 'Mejor valorado'].map((chip, index) => (
+            index === 0 ? (
+              <LinearGradient
+                key={chip}
+                colors={['#2563EB', '#22C55E']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={estilos.chipActivo}
+              >
+                <Text style={estilos.chipActivoTexto}>{chip}</Text>
+              </LinearGradient>
+            ) : (
+              <View key={chip} style={estilos.chip}>
+                <Text style={estilos.chipTexto}>{chip}</Text>
+              </View>
+            )
+          ))}
         </View>
 
         <View style={estilos.lista}>
           {opciones.map((oferta, index) => (
             <TouchableOpacity
               key={index}
-              style={[
-                estilos.cardOferta,
-                index === 0 && estilos.cardDestacada,
-              ]}
-              activeOpacity={0.85}
+              activeOpacity={0.88}
               onPress={() => elegirViaje(oferta)}
             >
-
-              <View
-                style={[
-                  estilos.logoEmpresa,
-                  oferta.empresa === 'Uber' && estilos.logoUber,
-                  oferta.empresa === 'Didi' && estilos.logoDidi,
-                  oferta.empresa === 'Cabify' && estilos.logoCabify,
-                ]}
-              >
-                <Text style={estilos.logoTexto}>
-                  {oferta.empresa.charAt(0)}
-                </Text>
-              </View>
-
-              <View style={estilos.infoOferta}>
-                <Text style={estilos.nombreEmpresa}>
-                  {oferta.empresa}
-                  <Text style={estilos.tipoServicio}> · {oferta.tipo}</Text>
-                </Text>
-
-                <Text style={estilos.detalleTexto}>
-                  {oferta.tiempoEstimado} min viaje · calculado por API
-                </Text>
-
-                {index === 0 && (
-                  <View style={estilos.badge}>
-                    <Text style={estilos.badgeTexto}>💸 Más barato</Text>
-                  </View>
-                )}
-              </View>
-
-              <View style={estilos.precioBox}>
-                <Text style={estilos.precio}>
-                  ${oferta.precio.toLocaleString('es-AR')}
-                </Text>
-
-                <View style={estilos.botonElegir}>
-                  <Text style={estilos.textoElegir}>Elegir</Text>
+              {index === 0 ? (
+                <LinearGradient
+                  colors={['rgba(37,99,235,0.20)', 'rgba(34,197,94,0.18)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={estilos.cardDestacada}
+                >
+                  <OfferContent oferta={oferta} badge={obtenerBadge(index)} destacado />
+                </LinearGradient>
+              ) : (
+                <View style={estilos.cardOferta}>
+                  <OfferContent oferta={oferta} badge={obtenerBadge(index)} />
                 </View>
-              </View>
-
+              )}
             </TouchableOpacity>
           ))}
         </View>
@@ -175,8 +182,69 @@ export default function ResultadosScreen({ navigation, route }) {
         </Text>
 
       </ScrollView>
-
     </SafeAreaView>
+  );
+}
+
+function OfferContent({ oferta, badge, destacado }) {
+  return (
+    <View style={estilos.cardInterior}>
+      <View
+        style={[
+          estilos.logoEmpresa,
+          oferta.empresa === 'Uber' && estilos.logoUber,
+          oferta.empresa === 'Didi' && estilos.logoDidi,
+          oferta.empresa === 'Cabify' && estilos.logoCabify,
+        ]}
+      >
+        <Text style={estilos.logoTexto}>
+          {oferta.empresa.charAt(0)}
+        </Text>
+      </View>
+
+      <View style={estilos.infoOferta}>
+        <Text style={estilos.nombreEmpresa}>
+          {oferta.empresa}
+          <Text style={estilos.tipoServicio}> · {oferta.tipo}</Text>
+        </Text>
+
+        <Text style={estilos.detalleTexto}>
+          {Math.max(2, oferta.tiempoEstimado - 8)} min llega · {oferta.tiempoEstimado} min viaje · ⭐ 4.{destacado ? '92' : '8'}
+        </Text>
+
+        {badge !== '' && (
+          destacado ? (
+            <LinearGradient
+              colors={['#2563EB', '#22C55E']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={estilos.badgeDestacado}
+            >
+              <Text style={estilos.badgeTextoDestacado}>{badge}</Text>
+            </LinearGradient>
+          ) : (
+            <View style={estilos.badge}>
+              <Text style={estilos.badgeTexto}>{badge}</Text>
+            </View>
+          )
+        )}
+      </View>
+
+      <View style={estilos.precioBox}>
+        <Text style={estilos.precio}>
+          ${oferta.precio.toLocaleString('es-AR')}
+        </Text>
+
+        <LinearGradient
+          colors={['#2563EB', '#22C55E']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={estilos.botonElegir}
+        >
+          <Text style={estilos.textoElegir}>Elegir</Text>
+        </LinearGradient>
+      </View>
+    </View>
   );
 }
 
@@ -235,54 +303,154 @@ const estilos = StyleSheet.create({
     marginTop: 3,
   },
 
-  resumenCard: {
-    marginTop: 20,
-    borderRadius: 22,
-    backgroundColor: 'rgba(34,197,94,0.12)',
+  mapaCard: {
+    marginTop: 18,
+    height: 122,
+    borderRadius: 24,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
-    padding: 16,
+    backgroundColor: '#152A4D',
+    position: 'relative',
   },
 
-  resumenTitulo: {
+  mapaFondo: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  gridMapa: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.25,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+
+  rutaLineaUno: {
+    position: 'absolute',
+    height: 3,
+    width: 250,
+    backgroundColor: '#2563EB',
+    left: 22,
+    top: 82,
+    transform: [{ rotate: '-18deg' }],
+    borderRadius: 4,
+  },
+
+  rutaLineaDos: {
+    position: 'absolute',
+    height: 3,
+    width: 170,
+    backgroundColor: '#22C55E',
+    right: 16,
+    top: 44,
+    transform: [{ rotate: '-28deg' }],
+    borderRadius: 4,
+  },
+
+  pinOrigen: {
+    position: 'absolute',
+    left: 28,
+    bottom: 24,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+
+  pinDestino: {
+    position: 'absolute',
+    right: 26,
+    top: 22,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#22C55E',
+    borderWidth: 3,
+    borderColor: 'rgba(34,197,94,0.35)',
+  },
+
+  mapaInfo: {
+    position: 'absolute',
+    left: 16,
+    bottom: 14,
+  },
+
+  mapaTitulo: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: '900',
   },
 
-  resumenTexto: {
+  mapaTexto: {
     color: '#B8C1CC',
-    fontSize: 12,
-    marginBottom: 3,
+    fontSize: 11,
+    marginTop: 3,
   },
 
-  resumenDato: {
-    color: '#22C55E',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 8,
-  },
-
-  lista: {
+  chipsBox: {
+    flexDirection: 'row',
+    gap: 8,
     marginTop: 18,
   },
 
-  cardOferta: {
-    minHeight: 96,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    padding: 16,
-    marginBottom: 14,
-    flexDirection: 'row',
+  chipActivo: {
+    height: 34,
+    paddingHorizontal: 14,
+    borderRadius: 17,
+    justifyContent: 'center',
     alignItems: 'center',
   },
 
+  chipActivoTexto: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+
+  chip: {
+    height: 34,
+    paddingHorizontal: 14,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.045)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  chipTexto: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  lista: {
+    marginTop: 16,
+  },
+
+  cardOferta: {
+    minHeight: 98,
+    borderRadius: 23,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    marginBottom: 14,
+  },
+
   cardDestacada: {
-    backgroundColor: 'rgba(34,197,94,0.12)',
-    borderColor: '#22C55E',
+    minHeight: 98,
+    borderRadius: 23,
+    borderWidth: 1,
+    borderColor: 'rgba(34,197,94,0.35)',
+    marginBottom: 14,
+  },
+
+  cardInterior: {
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
   logoEmpresa: {
@@ -319,7 +487,7 @@ const estilos = StyleSheet.create({
   nombreEmpresa: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: 'bold',
+    fontWeight: '900',
   },
 
   tipoServicio: {
@@ -339,14 +507,31 @@ const estilos = StyleSheet.create({
     paddingHorizontal: 9,
     height: 23,
     borderRadius: 12,
-    backgroundColor: '#22C55E',
+    backgroundColor: 'rgba(255,255,255,0.055)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
     justifyContent: 'center',
   },
 
   badgeTexto: {
+    color: '#B8C1CC',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+
+  badgeDestacado: {
+    alignSelf: 'flex-start',
+    marginTop: 9,
+    paddingHorizontal: 9,
+    height: 23,
+    borderRadius: 12,
+    justifyContent: 'center',
+  },
+
+  badgeTextoDestacado: {
     color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: '900',
   },
 
   precioBox: {
@@ -365,7 +550,6 @@ const estilos = StyleSheet.create({
     height: 30,
     paddingHorizontal: 14,
     borderRadius: 15,
-    backgroundColor: '#22C55E',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -373,7 +557,7 @@ const estilos = StyleSheet.create({
   textoElegir: {
     color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: '900',
   },
 
   mensaje: {

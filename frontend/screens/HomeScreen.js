@@ -1,5 +1,5 @@
-// Importo React y useState para manejar los datos escritos por el usuario.
 import React, { useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import {
   SafeAreaView,
@@ -12,15 +12,12 @@ import {
 } from 'react-native';
 
 export default function HomeScreen({ navigation, route }) {
-
-  // Recibo el usuario logueado.
   const usuario = route?.params?.usuario;
 
   const [origenIngresado, setOrigenIngresado] = useState('');
   const [destinoIngresado, setDestinoIngresado] = useState('');
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
 
-  // Esta función llama a la API del backend para calcular distancia, tiempo y precios.
   const manejarBusquedaViaje = async () => {
     setMensajeEnPantalla('');
 
@@ -79,11 +76,16 @@ export default function HomeScreen({ navigation, route }) {
 
         <View style={estilos.header}>
           <View style={estilos.usuarioBox}>
-            <View style={estilos.avatar}>
+            <LinearGradient
+              colors={['#2563EB', '#22C55E']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={estilos.avatar}
+            >
               <Text style={estilos.avatarTexto}>
                 {usuario?.nombre ? usuario.nombre.charAt(0).toUpperCase() : 'U'}
               </Text>
-            </View>
+            </LinearGradient>
 
             <View>
               <Text style={estilos.saludoChico}>Buenas tardes</Text>
@@ -100,68 +102,105 @@ export default function HomeScreen({ navigation, route }) {
         </View>
 
         <View style={estilos.hero}>
-          <Text style={estilos.titulo}>¿A dónde vamos?</Text>
+          <View style={estilos.badgeHero}>
+            <Text style={estilos.badgeHeroTexto}>✨ Comparador inteligente</Text>
+          </View>
+
+          <Text style={estilos.titulo}>¿A dónde vamos hoy?</Text>
+
           <Text style={estilos.subtitulo}>
-            Compará en segundos. Pagá menos.
+            Compará Uber, Didi y Cabify en segundos.
           </Text>
         </View>
 
-        <View style={estilos.cardBusqueda}>
-          <View style={estilos.lineaMapa}>
-            <View style={estilos.puntoOrigen} />
-            <View style={estilos.lineaVertical} />
-            <View style={estilos.puntoDestino} />
-          </View>
-
-          <View style={estilos.inputsBox}>
-            <View style={estilos.inputGrupo}>
-              <Text style={estilos.labelInput}>ORIGEN</Text>
-              <TextInput
-                style={estilos.input}
-                placeholder="Ej: ORT Yatay Buenos Aires"
-                placeholderTextColor="#7F8EA3"
-                value={origenIngresado}
-                onChangeText={setOrigenIngresado}
-              />
+        <LinearGradient
+          colors={['rgba(37,99,235,0.80)', 'rgba(34,197,94,0.80)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={estilos.cardBorde}
+        >
+          <View style={estilos.cardBusqueda}>
+            <View style={estilos.lineaMapa}>
+              <View style={estilos.puntoOrigen} />
+              <View style={estilos.lineaVertical} />
+              <View style={estilos.puntoDestino} />
             </View>
 
-            <View style={estilos.separador} />
+            <View style={estilos.inputsBox}>
+              <View style={estilos.inputGrupo}>
+                <Text style={estilos.labelInput}>ORIGEN</Text>
+                <TextInput
+                  style={estilos.input}
+                  placeholder="Ej: ORT Yatay Buenos Aires"
+                  placeholderTextColor="#7F8EA3"
+                  value={origenIngresado}
+                  onChangeText={setOrigenIngresado}
+                />
+              </View>
 
-            <View style={estilos.inputGrupo}>
-              <Text style={estilos.labelInput}>DESTINO</Text>
-              <TextInput
-                style={estilos.input}
-                placeholder="Ej: Alto Palermo Buenos Aires"
-                placeholderTextColor="#7F8EA3"
-                value={destinoIngresado}
-                onChangeText={setDestinoIngresado}
-              />
+              <View style={estilos.separador} />
+
+              <View style={estilos.inputGrupo}>
+                <Text style={estilos.labelInput}>DESTINO</Text>
+                <TextInput
+                  style={estilos.input}
+                  placeholder="Ej: Alto Palermo Buenos Aires"
+                  placeholderTextColor="#7F8EA3"
+                  value={destinoIngresado}
+                  onChangeText={setDestinoIngresado}
+                />
+              </View>
             </View>
           </View>
-        </View>
+        </LinearGradient>
 
         <TouchableOpacity
-          style={estilos.botonPrincipal}
           onPress={manejarBusquedaViaje}
+          activeOpacity={0.85}
         >
-          <Text style={estilos.textoBotonPrincipal}>🔎 Comparar viajes</Text>
+          <LinearGradient
+            colors={['#2563EB', '#22C55E']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={estilos.botonPrincipal}
+          >
+            <Text style={estilos.textoBotonPrincipal}>
+              🔎 Comparar viajes
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
 
         <Text style={estilos.mensaje}>{mensajeEnPantalla}</Text>
 
-        <View style={estilos.promoCard}>
-          <Text style={estilos.promoTitulo}>API integrada ✅</Text>
-          <Text style={estilos.promoSubtitulo}>
-            Distancia y tiempo calculados con OpenRouteService
-          </Text>
-        </View>
+        <LinearGradient
+          colors={['rgba(37,99,235,0.18)', 'rgba(34,197,94,0.14)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={estilos.promoCard}
+        >
+          <View style={estilos.iconoPromo}>
+            <Text style={estilos.iconoPromoTexto}>🏷️</Text>
+          </View>
+
+          <View style={estilos.promoTextoBox}>
+            <Text style={estilos.promoTitulo}>API integrada ✅</Text>
+            <Text style={estilos.promoSubtitulo}>
+              Distancia y tiempo calculados con OpenRouteService
+            </Text>
+          </View>
+
+          <Text style={estilos.rayo}>⚡</Text>
+        </LinearGradient>
 
         <View style={estilos.gridAccesos}>
           <TouchableOpacity
             style={estilos.accesoCard}
             onPress={() => navigation.navigate('MisViajes', { usuario })}
+            activeOpacity={0.85}
           >
-            <Text style={estilos.accesoIcono}>🚗</Text>
+            <View style={estilos.accesoIconoBox}>
+              <Text style={estilos.accesoIcono}>🚗</Text>
+            </View>
             <Text style={estilos.accesoTitulo}>Mis viajes</Text>
             <Text style={estilos.accesoSubtitulo}>Historial</Text>
           </TouchableOpacity>
@@ -169,8 +208,11 @@ export default function HomeScreen({ navigation, route }) {
           <TouchableOpacity
             style={estilos.accesoCard}
             onPress={() => navigation.navigate('Perfil', { usuario })}
+            activeOpacity={0.85}
           >
-            <Text style={estilos.accesoIcono}>👤</Text>
+            <View style={estilos.accesoIconoBox}>
+              <Text style={estilos.accesoIcono}>👤</Text>
+            </View>
             <Text style={estilos.accesoTitulo}>Perfil</Text>
             <Text style={estilos.accesoSubtitulo}>Mi cuenta</Text>
           </TouchableOpacity>
@@ -209,19 +251,21 @@ const estilos = StyleSheet.create({
   },
 
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#22C55E',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
   },
 
   avatarTexto: {
     color: 'white',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '900',
   },
 
   saludoChico: {
@@ -236,12 +280,12 @@ const estilos = StyleSheet.create({
   },
 
   botonCampana: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
+    borderColor: 'rgba(37,99,235,0.22)',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -252,39 +296,68 @@ const estilos = StyleSheet.create({
   },
 
   puntoVerde: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
     backgroundColor: '#22C55E',
     position: 'absolute',
     top: 9,
     right: 9,
+    shadowColor: '#22C55E',
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
   },
 
   hero: {
     marginTop: 34,
   },
 
+  badgeHero: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 14,
+  },
+
+  badgeHeroTexto: {
+    color: '#B8C1CC',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
   titulo: {
     color: '#FFFFFF',
-    fontSize: 32,
+    fontSize: 31,
     fontWeight: '900',
+    letterSpacing: -0.5,
   },
 
   subtitulo: {
     color: '#B8C1CC',
     fontSize: 15,
-    marginTop: 6,
+    marginTop: 7,
+  },
+
+  cardBorde: {
+    marginTop: 24,
+    borderRadius: 28,
+    padding: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
   },
 
   cardBusqueda: {
-    marginTop: 22,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    borderRadius: 26,
+    backgroundColor: '#152A4D',
+    borderRadius: 27,
     padding: 18,
     flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
 
   lineaMapa: {
@@ -296,8 +369,8 @@ const estilos = StyleSheet.create({
   },
 
   puntoOrigen: {
-    width: 9,
-    height: 9,
+    width: 10,
+    height: 10,
     borderRadius: 5,
     backgroundColor: '#FFFFFF',
   },
@@ -306,13 +379,13 @@ const estilos = StyleSheet.create({
     width: 1,
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.20)',
-    marginVertical: 6,
+    marginVertical: 8,
   },
 
   puntoDestino: {
-    width: 10,
-    height: 10,
-    borderRadius: 2,
+    width: 11,
+    height: 11,
+    borderRadius: 3,
     backgroundColor: '#22C55E',
   },
 
@@ -325,16 +398,17 @@ const estilos = StyleSheet.create({
   },
 
   labelInput: {
-    color: '#9CA3AF',
+    color: '#94A3B8',
     fontSize: 10,
-    letterSpacing: 1.3,
-    marginBottom: 5,
+    letterSpacing: 1.5,
+    marginBottom: 6,
+    fontWeight: '700',
   },
 
   input: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     padding: 0,
     outlineStyle: 'none',
   },
@@ -342,22 +416,24 @@ const estilos = StyleSheet.create({
   separador: {
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.10)',
-    marginVertical: 5,
+    marginVertical: 6,
   },
 
   botonPrincipal: {
-    marginTop: 16,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: '#22C55E',
+    marginTop: 18,
+    height: 58,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
   },
 
   textoBotonPrincipal: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '900',
   },
 
   mensaje: {
@@ -369,16 +445,35 @@ const estilos = StyleSheet.create({
 
   promoCard: {
     marginTop: 24,
-    borderRadius: 20,
-    backgroundColor: 'rgba(34,197,94,0.12)',
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
     padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  iconoPromo: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  iconoPromoTexto: {
+    fontSize: 18,
+  },
+
+  promoTextoBox: {
+    flex: 1,
   },
 
   promoTitulo: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontWeight: '900',
     fontSize: 14,
   },
 
@@ -386,6 +481,10 @@ const estilos = StyleSheet.create({
     color: '#B8C1CC',
     fontSize: 12,
     marginTop: 4,
+  },
+
+  rayo: {
+    fontSize: 19,
   },
 
   gridAccesos: {
@@ -396,21 +495,30 @@ const estilos = StyleSheet.create({
 
   accesoCard: {
     flex: 1,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.045)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
     padding: 16,
   },
 
+  accesoIconoBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 16,
+    backgroundColor: 'rgba(37,99,235,0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+
   accesoIcono: {
-    fontSize: 22,
-    marginBottom: 10,
+    fontSize: 20,
   },
 
   accesoTitulo: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontWeight: '900',
     fontSize: 14,
   },
 
@@ -423,6 +531,6 @@ const estilos = StyleSheet.create({
   cerrarSesion: {
     color: '#B8C1CC',
     textAlign: 'center',
-    marginTop: 24,
+    marginTop: 26,
   },
 });

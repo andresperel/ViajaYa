@@ -1,5 +1,6 @@
 // Importo las variables de entorno.
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 // Importo la app principal, donde tengo configuradas las rutas.
 const app = require('./app');

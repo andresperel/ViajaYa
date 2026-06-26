@@ -12,7 +12,11 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.send('Backend funcionando');
+  res.json({ servicio: 'ViajaYa API', estado: 'ok' });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ estado: 'ok', timestamp: new Date().toISOString() });
 });
 
 app.use('/', authRoutes);

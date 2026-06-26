@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "ViajaYa",
+    "slug": "viajaya",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "plugins": ["expo-router"],
     "ios": {
       "supportsTablet": true
     },

@@ -3,8 +3,8 @@ import {Alert,Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
 import {C,Field,GradientButton,IconButton,ScreenTitle} from '@/components/ui';
+import { API_URL } from '@/services/api';
 
-const API_URL=process.env.EXPO_PUBLIC_API_URL || 'http://10.152.2.129:3000';
 type Suggestion={label:string;coordinates:[number,number];confidence:number|null};
 
 export default function Search(){

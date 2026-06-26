@@ -1,222 +1,198 @@
-// Importo la conexión con Supabase.
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const supabase = require('../config/supabase');
 
+const SALT_ROUNDS = 12;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const BCRYPT_HASH = /^\$2[aby]\$\d{2}\$.{53}$/;
 
-// ====================== LOGIN ======================
+function usuarioPublico(usuario) {
+  return {
+    idUsuario: usuario.idUsuario,
+    nombre: usuario.nombre,
+    email: usuario.email,
+    telefono: usuario.telefono,
+    fechaRegistro: usuario.fechaRegistro,
+  };
+}
 
-const login = async (req, res) => {
+function validarPassword(password) {
+  return typeof password === 'string'
+    && password.length >= 8
+    && password.length <= 72
+    && Buffer.byteLength(password, 'utf8') <= 72;
+}
 
+function validarPasswordLogin(password) {
+  return typeof password === 'string'
+    && password.length > 0
+    && Buffer.byteLength(password, 'utf8') <= 72;
+}
+
+function crearToken(usuario) {
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET no esta configurado correctamente.');
+  }
+
+  return jwt.sign(
+    { email: usuario.email },
+    process.env.JWT_SECRET,
+    {
+      algorithm: 'HS256',
+      subject: String(usuario.idUsuario),
+      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+      issuer: process.env.JWT_ISSUER || 'viajaya-api',
+      audience: process.env.JWT_AUDIENCE || 'viajaya-mobile',
+    }
+  );
+}
+
+async function login(req, res) {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
 
-    if (!email || !password) {
-      return res.status(400).json({
-        mensaje: 'Faltan completar datos',
-      });
+    if (typeof email !== 'string' || !validarPasswordLogin(password)) {
+      return res.status(400).json({ mensaje: 'Email o contrasena invalidos.' });
     }
 
     const emailLimpio = email.trim().toLowerCase();
-
-    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailValido.test(emailLimpio)) {
-      return res.status(400).json({
-        mensaje: 'Ingresá un email válido',
-      });
+    if (!EMAIL_REGEX.test(emailLimpio) || emailLimpio.length > 100) {
+      return res.status(400).json({ mensaje: 'Email o contrasena invalidos.' });
     }
 
-    if (emailLimpio.length > 100) {
-      return res.status(400).json({
-        mensaje: 'El email es demasiado largo',
-      });
-    }
-
-    if (password.length < 4 || password.length > 30) {
-      return res.status(400).json({
-        mensaje: 'La contraseña debe tener entre 4 y 30 caracteres',
-      });
-    }
-
-    const {
-      data: usuarioEncontrado,
-      error: errorBusquedaUsuario,
-    } = await supabase
+    const { data: usuario, error } = await supabase
       .from('Usuario')
       .select('*')
       .eq('email', emailLimpio)
       .maybeSingle();
 
-    if (errorBusquedaUsuario) {
-
-      console.log('ERROR SUPABASE LOGIN');
-      console.log(errorBusquedaUsuario);
-
-      return res.status(500).json({
-        mensaje: 'Error al buscar usuario',
-        detalle: errorBusquedaUsuario.message,
-      });
+    if (error) {
+      console.error('Error al buscar usuario:', error);
+      return res.status(500).json({ mensaje: 'Error al iniciar sesion.' });
     }
 
-    if (!usuarioEncontrado) {
-      return res.status(404).json({
-        mensaje: 'Usuario no encontrado',
-      });
+    const passwordGuardada = usuario?.contraseña || '';
+    const passwordCorrecta = usuario && (BCRYPT_HASH.test(passwordGuardada)
+      ? await bcrypt.compare(password, passwordGuardada)
+      : password === passwordGuardada);
+    if (!passwordCorrecta) {
+      return res.status(401).json({ mensaje: 'Email o contrasena incorrectos.' });
     }
 
-    if (usuarioEncontrado.contraseña !== password) {
-      return res.status(401).json({
-        mensaje: 'Contraseña incorrecta',
-      });
+    // Las cuentas antiguas tenian contrasenas sin hash. Se actualizan al primer login valido.
+    if (!BCRYPT_HASH.test(passwordGuardada)) {
+      const { error: updateError } = await supabase
+        .from('Usuario')
+        .update({ contraseña: await bcrypt.hash(password, SALT_ROUNDS) })
+        .eq('idUsuario', usuario.idUsuario);
+      if (updateError) {
+        console.error('Error al migrar contrasena:', updateError);
+        return res.status(500).json({ mensaje: 'Error al iniciar sesion.' });
+      }
     }
 
     return res.status(200).json({
-      mensaje: 'Login exitoso',
-      usuario: usuarioEncontrado,
+      mensaje: 'Login exitoso.',
+      token: crearToken(usuario),
+      usuario: usuarioPublico(usuario),
     });
-
   } catch (error) {
-
-    console.log('ERROR GENERAL LOGIN');
-    console.log(error);
-
-    return res.status(500).json({
-      mensaje: 'Error general al iniciar sesión',
-      detalle: error.message,
-    });
+    console.error('Error general al iniciar sesion:', error);
+    return res.status(500).json({ mensaje: 'Error general al iniciar sesion.' });
   }
-};
+}
 
-
-// ====================== REGISTER ======================
-
-const register = async (req, res) => {
-
+async function register(req, res) {
   try {
-    const {
-      nombre,
-      telefono,
-      email,
-      password,
-    } = req.body;
+    const { nombre, telefono, email, password } = req.body || {};
 
-    if (!nombre || !telefono || !email || !password) {
+    if (
+      typeof nombre !== 'string'
+      || typeof telefono !== 'string'
+      || typeof email !== 'string'
+      || !validarPassword(password)
+    ) {
       return res.status(400).json({
-        mensaje: 'Faltan completar datos',
+        mensaje: 'Datos invalidos. La contrasena debe tener entre 8 y 72 caracteres.',
       });
     }
 
     const nombreLimpio = nombre.trim();
     const emailLimpio = email.trim().toLowerCase();
 
-    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     if (nombreLimpio.length < 3 || nombreLimpio.length > 50) {
-      return res.status(400).json({
-        mensaje: 'El nombre debe tener entre 3 y 50 caracteres',
-      });
+      return res.status(400).json({ mensaje: 'El nombre debe tener entre 3 y 50 caracteres.' });
     }
-
-    if (!emailValido.test(emailLimpio)) {
-      return res.status(400).json({
-        mensaje: 'Ingresá un email válido',
-      });
+    if (!EMAIL_REGEX.test(emailLimpio) || emailLimpio.length > 100) {
+      return res.status(400).json({ mensaje: 'Ingresa un email valido.' });
     }
-
-    if (emailLimpio.length > 100) {
-      return res.status(400).json({
-        mensaje: 'El email es demasiado largo',
-      });
-    }
-
     if (!/^\d{8,15}$/.test(telefono)) {
-      return res.status(400).json({
-        mensaje: 'El teléfono debe tener entre 8 y 15 números',
-      });
+      return res.status(400).json({ mensaje: 'El telefono debe tener entre 8 y 15 numeros.' });
     }
 
-    if (password.length < 4 || password.length > 30) {
-      return res.status(400).json({
-        mensaje: 'La contraseña debe tener entre 4 y 30 caracteres',
-      });
-    }
-
-    const {
-      data: usuarioExistente,
-      error: errorVerificacionUsuario,
-    } = await supabase
+    const { data: usuarioExistente, error: errorVerificacion } = await supabase
       .from('Usuario')
-      .select('*')
+      .select('idUsuario')
       .eq('email', emailLimpio)
       .maybeSingle();
 
-    if (errorVerificacionUsuario) {
-
-      console.log('ERROR SUPABASE VERIFICAR USUARIO');
-      console.log(errorVerificacionUsuario);
-
-      return res.status(500).json({
-        mensaje: 'Error al verificar usuario',
-        detalle: errorVerificacionUsuario.message,
-      });
+    if (errorVerificacion) {
+      console.error('Error al verificar usuario:', errorVerificacion);
+      return res.status(500).json({ mensaje: 'Error al registrar usuario.' });
     }
-
     if (usuarioExistente) {
-      return res.status(400).json({
-        mensaje: 'El usuario ya existe',
-      });
+      return res.status(409).json({ mensaje: 'El usuario ya existe.' });
     }
 
-    const idNuevoUsuario = Date.now();
-
-    const fechaDeRegistro = new Date().toISOString().split('T')[0];
-
-    const {
-      data: usuarioRegistrado,
-      error: errorRegistroUsuario,
-    } = await supabase
+    const { data: usuario, error: errorRegistro } = await supabase
       .from('Usuario')
-      .insert([
-        {
-          idUsuario: idNuevoUsuario,
-          nombre: nombreLimpio,
-          email: emailLimpio,
-          telefono: Number(telefono),
-          contraseña: password,
-          fechaRegistro: fechaDeRegistro,
-        },
-      ])
-      .select();
+      .insert([{
+        idUsuario: Date.now(),
+        nombre: nombreLimpio,
+        email: emailLimpio,
+        telefono: Number(telefono),
+        contraseña: await bcrypt.hash(password, SALT_ROUNDS),
+        fechaRegistro: new Date().toISOString().split('T')[0],
+      }])
+      .select()
+      .single();
 
-    if (errorRegistroUsuario) {
-
-      console.log('ERROR SUPABASE REGISTRAR USUARIO');
-      console.log(errorRegistroUsuario);
-
-      return res.status(500).json({
-        mensaje: 'Error al registrar usuario',
-        detalle: errorRegistroUsuario.message,
-      });
+    if (errorRegistro) {
+      console.error('Error al registrar usuario:', errorRegistro);
+      return res.status(500).json({ mensaje: 'Error al registrar usuario.' });
     }
 
     return res.status(201).json({
-      mensaje: 'Usuario registrado correctamente',
-      usuario: usuarioRegistrado,
+      mensaje: 'Usuario registrado correctamente.',
+      usuario: usuarioPublico(usuario),
     });
-
   } catch (error) {
-
-    console.log('ERROR GENERAL REGISTER');
-    console.log(error);
-
-    return res.status(500).json({
-      mensaje: 'Error general al registrar usuario',
-      detalle: error.message,
-    });
+    console.error('Error general al registrar usuario:', error);
+    return res.status(500).json({ mensaje: 'Error general al registrar usuario.' });
   }
-};
+}
 
+async function obtenerPerfil(req, res) {
+  try {
+    const { data: usuario, error } = await supabase
+      .from('Usuario')
+      .select('idUsuario,nombre,email,telefono,fechaRegistro')
+      .eq('idUsuario', req.auth.userId)
+      .maybeSingle();
 
-module.exports = {
-  login,
-  register,
-};
+    if (error) {
+      console.error('Error al obtener perfil:', error);
+      return res.status(500).json({ mensaje: 'Error al obtener el perfil.' });
+    }
+    if (!usuario) {
+      return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
+    }
+
+    return res.status(200).json({ usuario });
+  } catch (error) {
+    console.error('Error general al obtener perfil:', error);
+    return res.status(500).json({ mensaje: 'Error general al obtener el perfil.' });
+  }
+}
+
+module.exports = { login, register, obtenerPerfil };

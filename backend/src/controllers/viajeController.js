@@ -1,120 +1,72 @@
 const supabase = require('../config/supabase');
 
-const guardarViaje = async (req, res) => {
+async function guardarViaje(req, res) {
   const {
     calleOrigen,
     calleDestino,
     precioEstimado,
     tiempoEstimado,
-    idUsuario,
     idTipoServicio,
-  } = req.body;
+  } = req.body || {};
 
-  const idUsuarioNumero = Number(idUsuario);
   const idTipoServicioNumero = Number(idTipoServicio);
-
   if (
-    !calleOrigen ||
-    !calleDestino ||
-    !precioEstimado ||
-    !tiempoEstimado ||
-    !idUsuarioNumero ||
-    !idTipoServicioNumero
+    !calleOrigen
+    || !calleDestino
+    || !precioEstimado
+    || !tiempoEstimado
+    || !idTipoServicioNumero
   ) {
-    return res.status(400).json({
-      mensaje: 'Faltan datos para guardar el viaje',
-      datosRecibidos: req.body,
-    });
+    return res.status(400).json({ mensaje: 'Faltan datos para guardar el viaje.' });
   }
 
-  const idNuevoViaje = Date.now();
-  const fechaDeHoy = new Date().toISOString().split('T')[0];
-
-  const {
-    data: viajeGuardado,
-    error: errorGuardarViaje,
-  } = await supabase
+  const { data: viaje, error } = await supabase
     .from('Viaje')
-    .insert([
-      {
-        idViaje: idNuevoViaje,
-        calleOrigen,
-        alturaOrigen: 0,
-        calleDestino,
-        alturaDestino: 0,
-        precioEstimado,
-        tiempoEstimado,
-        fechaViaje: fechaDeHoy,
-        idUsuario: idUsuarioNumero,
-        idTipoServicio: idTipoServicioNumero,
-      },
-    ])
-    .select();
+    .insert([{
+      idViaje: Date.now(),
+      calleOrigen,
+      alturaOrigen: 0,
+      calleDestino,
+      alturaDestino: 0,
+      precioEstimado,
+      tiempoEstimado,
+      fechaViaje: new Date().toISOString().split('T')[0],
+      idUsuario: req.auth.userId,
+      idTipoServicio: idTipoServicioNumero,
+    }])
+    .select()
+    .single();
 
-  if (errorGuardarViaje) {
-    console.log('Error al guardar viaje:', errorGuardarViaje);
-
-    return res.status(500).json({
-      mensaje: 'Error al guardar viaje',
-      detalle: errorGuardarViaje.message,
-    });
+  if (error) {
+    console.error('Error al guardar viaje:', error);
+    return res.status(500).json({ mensaje: 'Error al guardar viaje.' });
   }
 
-  return res.status(201).json({
-    mensaje: 'Viaje guardado correctamente',
-    viaje: viajeGuardado,
-  });
-};
+  return res.status(201).json({ mensaje: 'Viaje guardado correctamente.', viaje });
+}
 
-const obtenerViajes = async (req, res) => {
-  const {
-    data: viajes,
-    error: errorViajes,
-  } = await supabase
+async function obtenerViajes(req, res) {
+  const { data: viajes, error } = await supabase
     .from('Viaje')
     .select('*')
+    .eq('idUsuario', req.auth.userId)
     .order('fechaViaje', { ascending: false });
 
-  if (errorViajes) {
-    return res.status(500).json({
-      mensaje: 'Error al obtener viajes',
-      detalle: errorViajes.message,
-    });
+  if (error) {
+    console.error('Error al obtener viajes:', error);
+    return res.status(500).json({ mensaje: 'Error al obtener viajes.' });
   }
 
   return res.status(200).json(viajes);
-};
+}
 
-const obtenerViajesPorUsuario = async (req, res) => {
-  const idUsuario = Number(req.params.idUsuario);
-
-  if (!idUsuario) {
-    return res.status(400).json({
-      mensaje: 'Falta idUsuario',
-    });
+async function obtenerViajesPorUsuario(req, res) {
+  const idSolicitado = req.params.idUsuario ? Number(req.params.idUsuario) : req.auth.userId;
+  if (!idSolicitado || idSolicitado !== req.auth.userId) {
+    return res.status(403).json({ mensaje: 'No tenes permiso para consultar estos viajes.' });
   }
 
-  const {
-    data: viajes,
-    error: errorViajes,
-  } = await supabase
-    .from('Viaje')
-    .select('*')
-    .eq('idUsuario', idUsuario)
-    .order('fechaViaje', { ascending: false });
+  return obtenerViajes(req, res);
+}
 
-  if (errorViajes) {
-    return res.status(500).json({
-      mensaje: 'Error al obtener viajes del usuario',
-      detalle: errorViajes.message,
-    });
-  }
-
-  return res.status(200).json(viajes);
-};
-
-module.exports = {
-  guardarViaje,
-  obtenerViajes,
-  obtenerViajesPorUsuario,
-};
+module.exports = { guardarViaje, obtenerViajes, obtenerViajesPorUsuario };

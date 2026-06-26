@@ -1,17 +1,16 @@
 const express = require('express');
-
-const router = express.Router();
-
 const {
   guardarViaje,
   obtenerViajes,
   obtenerViajesPorUsuario,
 } = require('../controllers/viajeController');
+const { requireAuth } = require('../middlewares/authMiddleware');
 
-router.post('/viaje', guardarViaje);
+const router = express.Router();
 
-router.get('/viajes', obtenerViajes);
-
-router.get('/viajes/usuario/:idUsuario', obtenerViajesPorUsuario);
+router.post('/viaje', requireAuth, guardarViaje);
+router.get('/viajes', requireAuth, obtenerViajes);
+router.get('/mis-viajes', requireAuth, obtenerViajesPorUsuario);
+router.get('/viajes/usuario/:idUsuario', requireAuth, obtenerViajesPorUsuario);
 
 module.exports = router;

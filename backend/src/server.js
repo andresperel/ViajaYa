@@ -7,8 +7,9 @@ const app = require('./app');
 
 // Uso el puerto del archivo .env o el 3000 por defecto.
 const puertoServidor = process.env.PORT || 3000;
+const hostServidor = process.env.HOST || '0.0.0.0';
 
 // Levanto el servidor.
-app.listen(puertoServidor, () => {
-  console.log(`Servidor corriendo en puerto ${puertoServidor}`);
+app.listen(puertoServidor, hostServidor, () => {
+  console.log(`Servidor corriendo en http://${hostServidor}:${puertoServidor}`);
 });

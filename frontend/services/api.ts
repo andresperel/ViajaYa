@@ -1,7 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 export const TOKEN_STORAGE_KEY = '@viajaya/auth-token';
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000';
+
+function getApiUrl() {
+  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
+
+  // Expo Go exposes the Metro host. Reusing it lets a physical phone reach the
+  // backend on the development computer without hard-coding its LAN address.
+  const metroHost = Constants.expoConfig?.hostUri?.split(':')[0];
+  return metroHost ? `http://${metroHost}:3000` : 'http://localhost:3000';
+}
+
+export const API_URL = getApiUrl();
 
 type ApiError = { mensaje?: string };
 

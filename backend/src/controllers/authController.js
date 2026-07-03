@@ -4,6 +4,7 @@ const supabase = require('../config/supabase');
 
 const SALT_ROUNDS = 12;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const NAME_REGEX = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[ '-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/;
 const BCRYPT_HASH = /^\$2[aby]\$\d{2}\$.{53}$/;
 
 function usuarioPublico(usuario) {
@@ -20,7 +21,12 @@ function validarPassword(password) {
   return typeof password === 'string'
     && password.length >= 8
     && password.length <= 72
-    && Buffer.byteLength(password, 'utf8') <= 72;
+    && Buffer.byteLength(password, 'utf8') <= 72
+    && !/\s/.test(password)
+    && /[a-z]/.test(password)
+    && /[A-Z]/.test(password)
+    && /\d/.test(password)
+    && /[^A-Za-z0-9]/.test(password);
 }
 
 function validarPasswordLogin(password) {
@@ -113,7 +119,7 @@ async function register(req, res) {
       || !validarPassword(password)
     ) {
       return res.status(400).json({
-        mensaje: 'Datos invalidos. La contrasena debe tener entre 8 y 72 caracteres.',
+        mensaje: 'Datos inválidos. La contraseña debe tener entre 8 y 72 caracteres e incluir mayúscula, minúscula, número y carácter especial, sin espacios.',
       });
     }
 
@@ -122,6 +128,9 @@ async function register(req, res) {
 
     if (nombreLimpio.length < 3 || nombreLimpio.length > 50) {
       return res.status(400).json({ mensaje: 'El nombre debe tener entre 3 y 50 caracteres.' });
+    }
+    if (!NAME_REGEX.test(nombreLimpio)) {
+      return res.status(400).json({ mensaje: 'El nombre solo puede contener letras, espacios, apóstrofes y guiones.' });
     }
     if (!EMAIL_REGEX.test(emailLimpio) || emailLimpio.length > 100) {
       return res.status(400).json({ mensaje: 'Ingresa un email valido.' });

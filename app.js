@@ -1,0 +1,195 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from 'react-native';
+
+
+export default function App() {
+
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+
+  const iniciarSesion = async () => {
+
+
+    try {
+
+
+      const response = await fetch('NGROK/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+
+
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+
+      const data = await response.json();
+
+
+      if (response.ok) {
+        Alert.alert('Éxito', data.mensaje);
+      } else {
+        Alert.alert('Error', data.mensaje);
+      }
+
+
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo conectar al servidor');
+    }
+  };
+
+
+  return (
+    <View style={styles.container}>
+
+
+      <Text style={styles.logo}>
+        Viaja<Text style={styles.logoColor}>YA</Text>
+      </Text>
+
+
+      <Text style={styles.subtitle}>
+        El futuro de tu movilidad comienza aquí
+      </Text>
+
+
+      <View style={styles.form}>
+
+
+        <Text style={styles.label}>
+          CORREO ELECTRÓNICO
+        </Text>
+
+
+        <TextInput
+          style={styles.input}
+          placeholder="admin@gmail.com"
+          placeholderTextColor="#7A7A7A"
+          value={email}
+          onChangeText={setEmail}
+        />
+
+
+        <Text style={styles.label}>
+          CONTRASEÑA
+        </Text>
+
+
+        <TextInput
+          style={styles.input}
+          placeholder="1234"
+          placeholderTextColor="#7A7A7A"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={iniciarSesion}
+        >
+          <Text style={styles.buttonText}>
+            Ingresar
+          </Text>
+        </TouchableOpacity>
+
+
+      </View>
+
+
+    </View>
+  );
+}
+
+
+const styles = StyleSheet.create({
+
+
+  container: {
+    flex: 1,
+    backgroundColor: '#071B3B',
+    justifyContent: 'center',
+    paddingHorizontal: 25,
+  },
+
+
+  logo: {
+    color: 'white',
+    fontSize: 42,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+
+
+  logoColor: {
+    color: '#00D2B3',
+  },
+
+
+  subtitle: {
+    color: '#B8C1CC',
+    textAlign: 'center',
+    marginBottom: 50,
+    fontSize: 15,
+  },
+
+
+  form: {
+    width: '100%',
+  },
+
+
+  label: {
+    color: '#A9B3C2',
+    marginBottom: 8,
+    fontSize: 12,
+    letterSpacing: 1,
+  },
+
+
+  input: {
+    backgroundColor: '#04122B',
+    color: 'white',
+    borderRadius: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    marginBottom: 20,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#0D2A57',
+  },
+
+
+  button: {
+    marginTop: 15,
+    backgroundColor: '#00D2B3',
+    paddingVertical: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+
+
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+
+});
+

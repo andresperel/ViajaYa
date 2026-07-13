@@ -10,11 +10,13 @@ async function guardarViaje(req, res) {
   } = req.body || {};
 
   const idTipoServicioNumero = Number(idTipoServicio);
+  const precioNumero = Number(precioEstimado);
+  const tiempoNumero = Number(tiempoEstimado);
   if (
     !calleOrigen
     || !calleDestino
-    || !precioEstimado
-    || !tiempoEstimado
+    || !Number.isFinite(precioNumero)
+    || !Number.isFinite(tiempoNumero)
     || !idTipoServicioNumero
   ) {
     return res.status(400).json({ mensaje: 'Faltan datos para guardar el viaje.' });
@@ -28,8 +30,8 @@ async function guardarViaje(req, res) {
       alturaOrigen: 0,
       calleDestino,
       alturaDestino: 0,
-      precioEstimado,
-      tiempoEstimado,
+      precioEstimado: precioNumero,
+      tiempoEstimado: tiempoNumero,
       fechaViaje: new Date().toISOString().split('T')[0],
       idUsuario: req.auth.userId,
       idTipoServicio: idTipoServicioNumero,
@@ -39,7 +41,7 @@ async function guardarViaje(req, res) {
 
   if (error) {
     console.error('Error al guardar viaje:', error);
-    return res.status(500).json({ mensaje: 'Error al guardar viaje.' });
+    return res.status(500).json({ mensaje: 'Error al guardar viaje.', detalle: error.message });
   }
 
   return res.status(201).json({ mensaje: 'Viaje guardado correctamente.', viaje });
@@ -69,4 +71,21 @@ async function obtenerViajesPorUsuario(req, res) {
   return obtenerViajes(req, res);
 }
 
-module.exports = { guardarViaje, obtenerViajes, obtenerViajesPorUsuario };
+async function obtenerStatsViajes(req, res) {
+  const { data: viajes, error } = await supabase
+    .from('Viaje')
+    .select('precioEstimado')
+    .eq('idUsuario', req.auth.userId);
+
+  if (error) {
+    console.error('Error al obtener stats:', error);
+    return res.status(500).json({ mensaje: 'Error al obtener estadisticas.', detalle: error.message });
+  }
+
+  const cantidad = viajes.length;
+  const totalGastado = viajes.reduce((total, viaje) => total + Number(viaje.precioEstimado || 0), 0);
+
+  return res.status(200).json({ cantidad, totalGastado });
+}
+
+module.exports = { guardarViaje, obtenerViajes, obtenerViajesPorUsuario, obtenerStatsViajes };

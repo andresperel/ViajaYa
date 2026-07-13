@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const supabase = require('../config/supabase');
 
@@ -6,6 +7,7 @@ const SALT_ROUNDS = 12;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_REGEX = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[ '-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/;
 const BCRYPT_HASH = /^\$2[aby]\$\d{2}\$.{53}$/;
+const resetTokensEnMemoria = new Map();
 
 function usuarioPublico(usuario) {
   return {
@@ -19,14 +21,9 @@ function usuarioPublico(usuario) {
 
 function validarPassword(password) {
   return typeof password === 'string'
-    && password.length >= 8
-    && password.length <= 72
-    && Buffer.byteLength(password, 'utf8') <= 72
-    && !/\s/.test(password)
-    && /[a-z]/.test(password)
-    && /[A-Z]/.test(password)
-    && /\d/.test(password)
-    && /[^A-Za-z0-9]/.test(password);
+    && password.length >= 6
+    && password.length <= 30
+    && Buffer.byteLength(password, 'utf8') <= 72;
 }
 
 function validarPasswordLogin(password) {
@@ -53,6 +50,49 @@ function crearToken(usuario) {
   );
 }
 
+function crearCodigoReset() {
+  return String(crypto.randomInt(100000, 999999));
+}
+
+async function enviarEmailReset(email, token) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESET_EMAIL_FROM || 'ViajaYa <onboarding@resend.dev>';
+
+  if (!apiKey) {
+    console.log(`Codigo de recuperacion para ${email}: ${token}`);
+    return false;
+  }
+
+  const respuesta = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from,
+      to: email,
+      subject: 'Restablece tu contrasena de ViajaYa',
+      text: `Tu codigo para restablecer la contrasena es: ${token}`,
+    }),
+  });
+
+  if (!respuesta.ok) {
+    const detalle = await respuesta.text();
+    throw new Error(`No se pudo enviar el email: ${detalle}`);
+  }
+
+  return true;
+}
+
+async function buscarUsuarioPorEmail(email) {
+  return supabase
+    .from('Usuario')
+    .select('*')
+    .eq('email', email)
+    .maybeSingle();
+}
+
 async function login(req, res) {
   try {
     const { email, password } = req.body || {};
@@ -66,11 +106,7 @@ async function login(req, res) {
       return res.status(400).json({ mensaje: 'Email o contrasena invalidos.' });
     }
 
-    const { data: usuario, error } = await supabase
-      .from('Usuario')
-      .select('*')
-      .eq('email', emailLimpio)
-      .maybeSingle();
+    const { data: usuario, error } = await buscarUsuarioPorEmail(emailLimpio);
 
     if (error) {
       console.error('Error al buscar usuario:', error);
@@ -85,7 +121,6 @@ async function login(req, res) {
       return res.status(401).json({ mensaje: 'Email o contrasena incorrectos.' });
     }
 
-    // Las cuentas antiguas tenian contrasenas sin hash. Se actualizan al primer login valido.
     if (!BCRYPT_HASH.test(passwordGuardada)) {
       const { error: updateError } = await supabase
         .from('Usuario')
@@ -119,23 +154,24 @@ async function register(req, res) {
       || !validarPassword(password)
     ) {
       return res.status(400).json({
-        mensaje: 'Datos inválidos. La contraseña debe tener entre 8 y 72 caracteres e incluir mayúscula, minúscula, número y carácter especial, sin espacios.',
+        mensaje: 'Datos invalidos. La contrasena debe tener entre 6 y 30 caracteres.',
       });
     }
 
     const nombreLimpio = nombre.trim();
     const emailLimpio = email.trim().toLowerCase();
+    const telefonoLimpio = telefono.replace(/\D/g, '');
 
     if (nombreLimpio.length < 3 || nombreLimpio.length > 50) {
       return res.status(400).json({ mensaje: 'El nombre debe tener entre 3 y 50 caracteres.' });
     }
     if (!NAME_REGEX.test(nombreLimpio)) {
-      return res.status(400).json({ mensaje: 'El nombre solo puede contener letras, espacios, apóstrofes y guiones.' });
+      return res.status(400).json({ mensaje: 'El nombre solo puede contener letras, espacios, apostrofes y guiones.' });
     }
     if (!EMAIL_REGEX.test(emailLimpio) || emailLimpio.length > 100) {
       return res.status(400).json({ mensaje: 'Ingresa un email valido.' });
     }
-    if (!/^\d{8,15}$/.test(telefono)) {
+    if (!/^\d{8,15}$/.test(telefonoLimpio)) {
       return res.status(400).json({ mensaje: 'El telefono debe tener entre 8 y 15 numeros.' });
     }
 
@@ -159,7 +195,7 @@ async function register(req, res) {
         idUsuario: Date.now(),
         nombre: nombreLimpio,
         email: emailLimpio,
-        telefono: Number(telefono),
+        telefono: Number(telefonoLimpio),
         contraseña: await bcrypt.hash(password, SALT_ROUNDS),
         fechaRegistro: new Date().toISOString().split('T')[0],
       }])
@@ -178,6 +214,182 @@ async function register(req, res) {
   } catch (error) {
     console.error('Error general al registrar usuario:', error);
     return res.status(500).json({ mensaje: 'Error general al registrar usuario.' });
+  }
+}
+
+async function forgotPassword(req, res) {
+  try {
+    const { email } = req.body || {};
+
+    if (typeof email !== 'string') {
+      return res.status(400).json({ mensaje: 'Ingresa un email valido.' });
+    }
+
+    const emailLimpio = email.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(emailLimpio) || emailLimpio.length > 100) {
+      return res.status(400).json({ mensaje: 'Ingresa un email valido.' });
+    }
+
+    const { data: usuario, error } = await buscarUsuarioPorEmail(emailLimpio);
+    if (error) {
+      console.error('Error al buscar usuario para reset:', error);
+      return res.status(500).json({ mensaje: 'Error al enviar el email.' });
+    }
+
+    if (!usuario) {
+      return res.status(200).json({ mensaje: 'Si el email existe, te enviamos un codigo.' });
+    }
+
+    const token = crearCodigoReset();
+    const expira = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+    const { error: updateError } = await supabase
+      .from('Usuario')
+      .update({
+        resetToken: token,
+        resetTokenExpira: expira,
+      })
+      .eq('idUsuario', usuario.idUsuario);
+
+    if (updateError) {
+      resetTokensEnMemoria.set(emailLimpio, { token, expira });
+      console.warn('No se pudieron guardar columnas resetToken/resetTokenExpira. Usando memoria:', updateError.message);
+    }
+
+    const emailEnviado = await enviarEmailReset(emailLimpio, token);
+
+    return res.status(200).json({
+      mensaje: emailEnviado
+        ? 'Te enviamos un codigo para restablecer tu contrasena.'
+        : 'El email no esta configurado en este entorno. Usa el codigo de prueba.',
+      emailEnviado,
+      devToken: process.env.NODE_ENV === 'production' ? undefined : token,
+    });
+  } catch (error) {
+    console.error('Error general al pedir reset:', error);
+    return res.status(500).json({ mensaje: 'Error al enviar el email.' });
+  }
+}
+
+async function resetPassword(req, res) {
+  try {
+    const { email, token, password } = req.body || {};
+
+    if (typeof email !== 'string' || typeof token !== 'string' || !validarPassword(password)) {
+      return res.status(400).json({ mensaje: 'Datos invalidos.' });
+    }
+
+    const emailLimpio = email.trim().toLowerCase();
+    const tokenLimpio = token.trim();
+
+    const { data: usuario, error } = await buscarUsuarioPorEmail(emailLimpio);
+    if (error) {
+      console.error('Error al buscar usuario para actualizar contrasena:', error);
+      return res.status(500).json({ mensaje: 'Error al restablecer la contrasena.' });
+    }
+    if (!usuario) {
+      return res.status(400).json({ mensaje: 'Codigo invalido o vencido.' });
+    }
+
+    const resetEnMemoria = resetTokensEnMemoria.get(emailLimpio);
+    const tokenGuardado = usuario.resetToken || resetEnMemoria?.token;
+    const expira = usuario.resetTokenExpira || resetEnMemoria?.expira;
+
+    if (!tokenGuardado || tokenGuardado !== tokenLimpio || !expira || new Date(expira).getTime() < Date.now()) {
+      return res.status(400).json({ mensaje: 'Codigo invalido o vencido.' });
+    }
+
+    const nuevaPasswordHasheada = await bcrypt.hash(password, SALT_ROUNDS);
+    let { error: updateError } = await supabase
+      .from('Usuario')
+      .update({
+        contraseña: nuevaPasswordHasheada,
+        resetToken: null,
+        resetTokenExpira: null,
+      })
+      .eq('idUsuario', usuario.idUsuario);
+
+    if (updateError) {
+      const { error: retryError } = await supabase
+        .from('Usuario')
+        .update({ contraseña: nuevaPasswordHasheada })
+        .eq('idUsuario', usuario.idUsuario);
+
+      if (retryError) {
+        console.error('Error al actualizar contrasena:', retryError);
+        return res.status(500).json({ mensaje: 'Error al restablecer la contrasena.' });
+      }
+    }
+
+    resetTokensEnMemoria.delete(emailLimpio);
+
+    return res.status(200).json({ mensaje: 'Contrasena actualizada correctamente.' });
+  } catch (error) {
+    console.error('Error general al restablecer contrasena:', error);
+    return res.status(500).json({ mensaje: 'Error al restablecer la contrasena.' });
+  }
+}
+
+async function socialLogin(req, res) {
+  try {
+    const { provider, email: emailBody, nombre: nombreBody } = req.body || {};
+    const providerLimpio = String(provider || '').trim().toLowerCase();
+
+    if (!['google', 'apple'].includes(providerLimpio)) {
+      return res.status(400).json({ mensaje: 'Proveedor invalido.' });
+    }
+
+    if (typeof emailBody !== 'string') {
+      return res.status(400).json({ mensaje: 'No recibimos el email de la cuenta.' });
+    }
+
+    const email = emailBody.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(email) || email.length > 100) {
+      return res.status(400).json({ mensaje: 'Email de cuenta social invalido.' });
+    }
+
+    const nombre = typeof nombreBody === 'string' && nombreBody.trim()
+      ? nombreBody.trim().slice(0, 50)
+      : providerLimpio === 'google' ? 'Usuario Google' : 'Usuario Apple';
+
+    const { data: usuarioExistente, error: errorBusqueda } = await buscarUsuarioPorEmail(email);
+    if (errorBusqueda) {
+      console.error('Error al buscar usuario social:', errorBusqueda);
+      return res.status(500).json({ mensaje: 'Error al iniciar sesion social.' });
+    }
+
+    let usuario = usuarioExistente;
+
+    if (!usuario) {
+      const { data: usuarioCreado, error: errorRegistro } = await supabase
+        .from('Usuario')
+        .insert([{
+          idUsuario: Date.now(),
+          nombre,
+          email,
+          telefono: 0,
+          contraseña: await bcrypt.hash(crypto.randomBytes(24).toString('hex'), SALT_ROUNDS),
+          fechaRegistro: new Date().toISOString().split('T')[0],
+        }])
+        .select()
+        .single();
+
+      if (errorRegistro) {
+        console.error('Error al registrar usuario social:', errorRegistro);
+        return res.status(500).json({ mensaje: 'Error al iniciar sesion social.' });
+      }
+
+      usuario = usuarioCreado;
+    }
+
+    return res.status(200).json({
+      mensaje: 'Login social exitoso.',
+      token: crearToken(usuario),
+      usuario: usuarioPublico(usuario),
+    });
+  } catch (error) {
+    console.error('Error general en login social:', error);
+    return res.status(500).json({ mensaje: 'Error general al iniciar sesion social.' });
   }
 }
 
@@ -204,4 +416,11 @@ async function obtenerPerfil(req, res) {
   }
 }
 
-module.exports = { login, register, obtenerPerfil };
+module.exports = {
+  login,
+  register,
+  forgotPassword,
+  resetPassword,
+  socialLogin,
+  obtenerPerfil,
+};

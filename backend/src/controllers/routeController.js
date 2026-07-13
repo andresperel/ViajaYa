@@ -1,7 +1,7 @@
 const axios = require('axios');
 const https = require('https');
 
-const CABA_BBOX = Object.freeze({ minLon: -58.531, minLat: -34.706, maxLon: -58.335, maxLat: -34.526 });
+const CABA_BBOX = Object.freeze({ minLon: -58.70, minLat: -34.85, maxLon: -58.25, maxLat: -34.45 });
 const ORS_TIMEOUT_MS = 12_000;
 const cache = new Map();
 
@@ -18,6 +18,11 @@ const googleRoutesHttp = axios.create({
   timeout: ORS_TIMEOUT_MS,
 });
 const googleMapsHttp = axios.create({ baseURL: 'https://maps.googleapis.com', timeout: ORS_TIMEOUT_MS });
+const nominatimHttp = axios.create({
+  baseURL: 'https://nominatim.openstreetmap.org',
+  timeout: ORS_TIMEOUT_MS,
+  headers: { 'User-Agent': 'ViajaYa/1.0 direccion-autocomplete' },
+});
 
 const inCaba = ([lon, lat]) => Number.isFinite(lon) && Number.isFinite(lat)
   && lon >= CABA_BBOX.minLon && lon <= CABA_BBOX.maxLon && lat >= CABA_BBOX.minLat && lat <= CABA_BBOX.maxLat;
@@ -59,6 +64,10 @@ async function buscarSugerencias(req, res) {
   const query = typeof req.query.q === 'string' ? normalizarDireccion(req.query.q) : '';
   if (query.length < 3) return res.status(400).json({ mensaje: 'Ingresá al menos 3 caracteres.' });
   if (!process.env.OPENROUTESERVICE_API_KEY && !process.env.GOOGLE_MAPS_API_KEY) return res.status(503).json({ mensaje: 'El servicio de rutas no está configurado.' });
+  const cacheKey = `sugerencias:${query.toLowerCase()}`;
+  const cached = cache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return res.json(cached.value);
+
   try {
     if (process.env.GOOGLE_MAPS_API_KEY) {
       const { data } = await googleMapsHttp.get('/maps/api/geocode/json', {
@@ -68,7 +77,9 @@ async function buscarSugerencias(req, res) {
       const sugerenciasGoogle = data.results
         .map((result) => ({ label: result.formatted_address, coordinates: [result.geometry.location.lng, result.geometry.location.lat], confidence: result.partial_match ? 0.5 : 1 }))
         .filter((item) => inCaba(item.coordinates));
-      return res.json({ sugerencias: sugerenciasGoogle, proveedor: 'google-geocoding' });
+      const resultado = { sugerencias: sugerenciasGoogle, proveedor: 'google-geocoding' };
+      cache.set(cacheKey, { value: resultado, expiresAt: Date.now() + 5 * 60 * 1000 });
+      return res.json(resultado);
     }
     const params = {
       api_key: process.env.OPENROUTESERVICE_API_KEY,
@@ -81,13 +92,9 @@ async function buscarSugerencias(req, res) {
       layers: 'address,venue',
       size: 20,
     };
-    // autocomplete es rápido, search aporta calles/alturas que autocomplete puede omitir.
-    const [autocomplete, search] = await Promise.all([
-      orsHttp.get('/geocode/autocomplete', { params }),
-      orsHttp.get('/geocode/search', { params }),
-    ]);
+    const autocomplete = await orsHttp.get('/geocode/autocomplete', { params });
     const seen = new Set();
-    const sugerencias = [...(autocomplete.data.features || []), ...(search.data.features || [])]
+    let sugerencias = (autocomplete.data.features || [])
       .filter((feature) => inCaba(feature.geometry?.coordinates || []))
       .map((feature) => ({
         label: feature.properties?.label,
@@ -100,11 +107,49 @@ async function buscarSugerencias(req, res) {
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
-      })
-    return res.json({ sugerencias, proveedor: 'openrouteservice' });
+      });
+
+    if (sugerencias.length === 0) {
+      const { data: osm } = await nominatimHttp.get('/search', {
+        params: {
+          q: `${query}, Buenos Aires, Argentina`,
+          format: 'jsonv2',
+          addressdetails: 1,
+          limit: 8,
+          countrycodes: 'ar',
+          viewbox: `${CABA_BBOX.minLon},${CABA_BBOX.maxLat},${CABA_BBOX.maxLon},${CABA_BBOX.minLat}`,
+          bounded: 1,
+        },
+      });
+
+      const sugerenciasOsm = (osm || [])
+        .map((item) => ({
+          label: item.display_name,
+          coordinates: [Number(item.lon), Number(item.lat)],
+          confidence: Number(item.importance) || null,
+        }))
+        .filter((item) => item.label && inCaba(item.coordinates))
+        .filter((item) => {
+          const key = `${item.label}-${item.coordinates.join(',')}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+      sugerencias = [...sugerencias, ...sugerenciasOsm];
+    }
+
+    const resultado = { sugerencias, proveedor: 'openrouteservice' };
+    cache.set(cacheKey, { value: resultado, expiresAt: Date.now() + 5 * 60 * 1000 });
+    return res.json(resultado);
   } catch (error) {
-    console.error('Error autocomplete ORS:', error.response?.data || error.message);
-    return res.status(error.code === 'ECONNABORTED' ? 504 : 502).json({ mensaje: 'No pudimos buscar direcciones en este momento.' });
+    const status = error.code === 'ECONNABORTED' ? 504 : error.response?.status === 429 ? 429 : 502;
+    console.error('Error autocomplete:', status, error.response?.statusText || error.message);
+    return res.status(status).json({
+      mensaje: status === 429
+        ? 'El buscador alcanzo su limite temporal. Espera unos segundos e intenta nuevamente.'
+        : 'No pudimos buscar direcciones en este momento.',
+    });
   }
 }
 

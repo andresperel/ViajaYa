@@ -7,75 +7,33 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Image,
 } from 'react-native';
 
 export default function WelcomeScreen({ navigation }) {
   return (
     <SafeAreaView style={estilos.fondo}>
       <View style={estilos.pantallaMobile}>
-
-        <View style={estilos.header}>
-          <Image
-            source={require('../assets/logo-viajaya.png')}
-            style={estilos.logoImagen}
-            resizeMode="contain"
-          />
-
-          <View style={estilos.versionBox}>
-            <Text style={estilos.versionTexto}>✨ v2.0</Text>
-          </View>
-        </View>
-
-        <View style={estilos.heroCard}>
-          <LinearGradient
-            colors={['rgba(37,99,235,0.32)', 'rgba(34,197,94,0.22)']}
-            start={{ x: 0, y: 1 }}
-            end={{ x: 1, y: 0 }}
-            style={estilos.heroFondo}
-          />
-
-          <View style={estilos.cuadricula} />
-
-          <View style={estilos.rutaUno} />
-          <View style={estilos.rutaDos} />
-
-          <View style={estilos.puntoOrigen} />
-          <View style={estilos.puntoDestino} />
-
-          <View style={estilos.tarjetaPrecio}>
-            <Text style={estilos.labelPrecio}>MEJOR PRECIO HOY</Text>
-
-            <View style={estilos.precioFila}>
-              <View>
-                <Text style={estilos.precio}>
-                  $3.450 <Text style={estilos.tiempo}>· 12 min</Text>
-                </Text>
-
-                <Text style={estilos.proveedor}>
-                  Uber · UberX
-                </Text>
-              </View>
-
-              <LinearGradient
-                colors={['#2563EB', '#22C55E']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={estilos.botonFlecha}
-              >
-                <Text style={estilos.flecha}>↗</Text>
-              </LinearGradient>
-            </View>
-          </View>
+        <View style={estilos.heroMarcaBox}>
+          <Text style={estilos.marcaTexto}>
+            <Text style={estilos.marcaViaja}>viaja</Text>
+            <Text style={estilos.marcaYaInicio}>Y</Text>
+            <Text style={estilos.marcaYaFinal}>A</Text>
+          </Text>
         </View>
 
         <View style={estilos.bottom}>
-          <Text style={estilos.titulo}>
-            Movete <Text style={estilos.tituloGradiente}>mejor</Text>.
-          </Text>
+          <View style={estilos.tituloFila}>
+            <Text style={estilos.titulo}>Movete </Text>
+            <Text style={estilos.tituloGradiente}>
+              <Text style={estilos.mejorInicio}>me</Text>
+              <Text style={estilos.mejorMedio}>j</Text>
+              <Text style={estilos.mejorFinal}>or</Text>
+            </Text>
+            <Text style={estilos.titulo}>.</Text>
+          </View>
 
           <Text style={estilos.subtitulo}>
-            Compará Uber, Didi y Cabify en una sola búsqueda.
+            Compara Uber, Didi y Cabify en una sola busqueda.
           </Text>
 
           <View style={estilos.zonaBotones}>
@@ -89,9 +47,7 @@ export default function WelcomeScreen({ navigation }) {
                 end={{ x: 1, y: 0 }}
                 style={estilos.botonPrincipal}
               >
-                <Text style={estilos.textoBotonPrincipal}>
-                  Comenzar
-                </Text>
+                <Text style={estilos.textoBotonPrincipal}>Comenzar</Text>
               </LinearGradient>
             </TouchableOpacity>
 
@@ -100,13 +56,10 @@ export default function WelcomeScreen({ navigation }) {
               activeOpacity={0.85}
               onPress={() => navigation.navigate('Login')}
             >
-              <Text style={estilos.textoBotonSecundario}>
-                Ya tengo cuenta
-              </Text>
+              <Text style={estilos.textoBotonSecundario}>Ya tengo cuenta</Text>
             </TouchableOpacity>
           </View>
         </View>
-
       </View>
     </SafeAreaView>
   );
@@ -129,172 +82,64 @@ const estilos = StyleSheet.create({
     paddingBottom: 34,
   },
 
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  logoImagen: {
-    width: 128,
-    height: 46,
-  },
-
-  versionBox: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-  },
-
-  versionTexto: {
-    color: '#B8C1CC',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  heroCard: {
+  heroMarcaBox: {
     flex: 1,
-    marginTop: 38,
-    borderRadius: 36,
-    overflow: 'hidden',
-    backgroundColor: '#152A4D',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    position: 'relative',
-    minHeight: 360,
-  },
-
-  heroFondo: {
-    ...StyleSheet.absoluteFillObject,
-  },
-
-  cuadricula: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-
-  rutaUno: {
-    position: 'absolute',
-    width: 390,
-    height: 4,
-    borderRadius: 4,
-    backgroundColor: '#2563EB',
-    transform: [{ rotate: '-39deg' }],
-    left: -42,
-    bottom: 146,
-  },
-
-  rutaDos: {
-    position: 'absolute',
-    width: 270,
-    height: 4,
-    borderRadius: 4,
-    backgroundColor: '#22C55E',
-    transform: [{ rotate: '-45deg' }],
-    right: -32,
-    top: 106,
-  },
-
-  puntoOrigen: {
-    position: 'absolute',
-    left: 38,
-    bottom: 92,
-    width: 15,
-    height: 15,
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 4,
-    borderColor: 'rgba(255,255,255,0.25)',
-  },
-
-  puntoDestino: {
-    position: 'absolute',
-    right: 32,
-    top: 42,
-    width: 15,
-    height: 15,
-    borderRadius: 8,
-    backgroundColor: '#22C55E',
-    borderWidth: 4,
-    borderColor: 'rgba(34,197,94,0.25)',
-  },
-
-  tarjetaPrecio: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 16,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    padding: 16,
-  },
-
-  labelPrecio: {
-    color: '#94A3B8',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.6,
-  },
-
-  precioFila: {
-    marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  precio: {
-    color: '#FFFFFF',
-    fontSize: 26,
-    fontWeight: '900',
-  },
-
-  tiempo: {
-    color: '#94A3B8',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-
-  proveedor: {
-    color: '#94A3B8',
-    fontSize: 11,
-    marginTop: 6,
-  },
-
-  botonFlecha: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
     justifyContent: 'center',
     alignItems: 'center',
+    minHeight: 390,
   },
 
-  flecha: {
+  marcaTexto: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 64,
+    lineHeight: 70,
     fontWeight: '900',
+  },
+
+  marcaViaja: {
+    color: '#FFFFFF',
+  },
+
+  marcaYaInicio: {
+    color: '#2563EB',
+  },
+
+  marcaYaFinal: {
+    color: '#22C55E',
   },
 
   bottom: {
-    paddingTop: 32,
+    paddingTop: 30,
+  },
+
+  tituloFila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
   },
 
   titulo: {
     color: '#FFFFFF',
     fontSize: 40,
-    lineHeight: 42,
+    lineHeight: 46,
     fontWeight: '900',
-    letterSpacing: -1,
   },
 
   tituloGradiente: {
+    fontSize: 40,
+    lineHeight: 46,
+    fontWeight: '900',
+  },
+
+  mejorInicio: {
+    color: '#2563EB',
+  },
+
+  mejorMedio: {
+    color: '#1FAE9A',
+  },
+
+  mejorFinal: {
     color: '#22C55E',
   },
 

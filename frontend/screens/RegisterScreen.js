@@ -9,40 +9,43 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { API_URL } from '../services/api';
 
 export default function RegisterScreen({ navigation }) {
   const [nombreIngresado, setNombreIngresado] = useState('');
   const [telefonoIngresado, setTelefonoIngresado] = useState('');
   const [correoIngresado, setCorreoIngresado] = useState('');
-  const [contraseñaIngresada, setContraseñaIngresada] = useState('');
+  const [passwordIngresada, setPasswordIngresada] = useState('');
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
+  const [aceptoTerminos, setAceptoTerminos] = useState(false);
+  const [mostrarPoliticas, setMostrarPoliticas] = useState(false);
 
   const [errorNombre, setErrorNombre] = useState('');
   const [errorTelefono, setErrorTelefono] = useState('');
   const [errorCorreo, setErrorCorreo] = useState('');
-  const [errorContraseña, setErrorContraseña] = useState('');
+  const [errorPassword, setErrorPassword] = useState('');
 
   const limpiarErrores = () => {
     setMensajeEnPantalla('');
     setErrorNombre('');
     setErrorTelefono('');
     setErrorCorreo('');
-    setErrorContraseña('');
+    setErrorPassword('');
   };
 
   const manejarRegistroUsuario = async () => {
     limpiarErrores();
 
     const nombreLimpio = nombreIngresado.trim();
-    const telefonoLimpio = telefonoIngresado.trim();
+    const telefonoLimpio = telefonoIngresado.replace(/\D/g, '');
     const correoLimpio = correoIngresado.trim().toLowerCase();
-    const contraseñaLimpia = contraseñaIngresada.trim();
+    const passwordLimpia = passwordIngresada.trim();
 
     const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     let hayError = false;
 
     if (!nombreLimpio) {
-      setErrorNombre('Completá tu nombre');
+      setErrorNombre('Completa tu nombre');
       hayError = true;
     } else if (nombreLimpio.length < 3 || nombreLimpio.length > 50) {
       setErrorNombre('El nombre debe tener entre 3 y 50 caracteres');
@@ -50,10 +53,10 @@ export default function RegisterScreen({ navigation }) {
     }
 
     if (!correoLimpio) {
-      setErrorCorreo('Completá tu correo electrónico');
+      setErrorCorreo('Completa tu correo electronico');
       hayError = true;
     } else if (!emailValido.test(correoLimpio)) {
-      setErrorCorreo('Ingresá un email válido');
+      setErrorCorreo('Ingresa un email valido');
       hayError = true;
     } else if (correoLimpio.length > 100) {
       setErrorCorreo('El email es demasiado largo');
@@ -61,18 +64,23 @@ export default function RegisterScreen({ navigation }) {
     }
 
     if (!telefonoLimpio) {
-      setErrorTelefono('Completá tu teléfono');
+      setErrorTelefono('Completa tu telefono');
       hayError = true;
     } else if (!/^\d{8,15}$/.test(telefonoLimpio)) {
-      setErrorTelefono('El teléfono debe tener entre 8 y 15 números');
+      setErrorTelefono('El telefono debe tener entre 8 y 15 numeros');
       hayError = true;
     }
 
-    if (!contraseñaLimpia) {
-      setErrorContraseña('Completá tu contraseña');
+    if (!passwordLimpia) {
+      setErrorPassword('Completa tu contrasena');
       hayError = true;
-    } else if (contraseñaLimpia.length < 4 || contraseñaLimpia.length > 30) {
-      setErrorContraseña('La contraseña debe tener entre 4 y 30 caracteres');
+    } else if (passwordLimpia.length < 6 || passwordLimpia.length > 30) {
+      setErrorPassword('La contrasena debe tener entre 6 y 30 caracteres');
+      hayError = true;
+    }
+
+    if (!aceptoTerminos) {
+      setMensajeEnPantalla('Acepta los terminos para crear tu cuenta');
       hayError = true;
     }
 
@@ -81,14 +89,17 @@ export default function RegisterScreen({ navigation }) {
     try {
       setMensajeEnPantalla('Creando cuenta...');
 
-      const respuestaDelServidor = await fetch('https://dispatch-supermom-customary.ngrok-free.dev/register', {
+      const respuestaDelServidor = await fetch(`${API_URL}/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': '1',
+        },
         body: JSON.stringify({
           nombre: nombreLimpio,
           telefono: telefonoLimpio,
           email: correoLimpio,
-          password: contraseñaLimpia,
+          password: passwordLimpia,
         }),
       });
 
@@ -108,20 +119,17 @@ export default function RegisterScreen({ navigation }) {
           setErrorCorreo(mensajeError);
         } else if (mensajeError.toLowerCase().includes('nombre')) {
           setErrorNombre(mensajeError);
-        } else if (
-          mensajeError.toLowerCase().includes('teléfono') ||
-          mensajeError.toLowerCase().includes('telefono')
-        ) {
+        } else if (mensajeError.toLowerCase().includes('telefono')) {
           setErrorTelefono(mensajeError);
-        } else if (mensajeError.toLowerCase().includes('contraseña')) {
-          setErrorContraseña(mensajeError);
+        } else if (mensajeError.toLowerCase().includes('contrasena')) {
+          setErrorPassword(mensajeError);
         } else {
           setMensajeEnPantalla(mensajeError);
         }
       }
     } catch (error) {
       setMensajeEnPantalla('No pude conectarme con el servidor');
-      console.log('Error de conexión:', error);
+      console.log('Error de conexion:', error);
     }
   };
 
@@ -136,18 +144,6 @@ export default function RegisterScreen({ navigation }) {
         </TouchableOpacity>
 
         <View style={estilos.headerRegistro}>
-          <View style={estilos.progresoBox}>
-            <LinearGradient
-              colors={['#2563EB', '#22C55E']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={estilos.progresoActivo}
-            />
-            <View style={estilos.progresoInactivo} />
-            <View style={estilos.progresoInactivo} />
-          </View>
-
-          <Text style={estilos.paso}>Paso 1 de 3</Text>
           <Text style={estilos.titulo}>Crear cuenta</Text>
           <Text style={estilos.subtitulo}>Toma menos de un minuto. Sin tarjeta.</Text>
         </View>
@@ -156,7 +152,7 @@ export default function RegisterScreen({ navigation }) {
           <Campo
             icono="👤"
             label="Nombre completo"
-            placeholder="María González"
+            placeholder="Maria Gonzalez"
             value={nombreIngresado}
             onChangeText={(texto) => {
               setNombreIngresado(texto);
@@ -167,7 +163,7 @@ export default function RegisterScreen({ navigation }) {
 
           <Campo
             icono="✉️"
-            label="Correo electrónico"
+            label="Correo electronico"
             placeholder="maria@ejemplo.com"
             value={correoIngresado}
             onChangeText={(texto) => {
@@ -180,7 +176,7 @@ export default function RegisterScreen({ navigation }) {
 
           <Campo
             icono="📱"
-            label="Teléfono"
+            label="Telefono"
             placeholder="+54 11 0000 0000"
             value={telefonoIngresado}
             onChangeText={(texto) => {
@@ -188,37 +184,64 @@ export default function RegisterScreen({ navigation }) {
               setErrorTelefono('');
             }}
             error={errorTelefono}
-            keyboardType="numeric"
+            keyboardType="phone-pad"
           />
 
           <Campo
             icono="🔒"
-            label="Contraseña"
-            placeholder="Mínimo 8 caracteres"
-            value={contraseñaIngresada}
+            label="Contrasena"
+            placeholder="Minimo 6 caracteres"
+            value={passwordIngresada}
             onChangeText={(texto) => {
-              setContraseñaIngresada(texto);
-              setErrorContraseña('');
+              setPasswordIngresada(texto);
+              setErrorPassword('');
             }}
-            error={errorContraseña}
+            error={errorPassword}
             secureTextEntry
           />
 
-          <View style={estilos.terminosBox}>
-            <LinearGradient
-              colors={['#2563EB', '#22C55E']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={estilos.checkBox}
-            >
-              <Text style={estilos.checkTexto}>✓</Text>
-            </LinearGradient>
+          <TouchableOpacity
+            style={estilos.terminosBox}
+            activeOpacity={0.85}
+            onPress={() => setAceptoTerminos((valorActual) => !valorActual)}
+          >
+            {aceptoTerminos ? (
+              <LinearGradient
+                colors={['#2563EB', '#22C55E']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={estilos.checkBox}
+              >
+                <Text style={estilos.checkTexto}>✓</Text>
+              </LinearGradient>
+            ) : (
+              <View style={[estilos.checkBox, estilos.checkBoxVacio]} />
+            )}
 
             <Text style={estilos.terminosTexto}>
-              Acepto los <Text style={estilos.terminosBlanco}>términos y condiciones</Text> y la{' '}
-              <Text style={estilos.terminosBlanco}>política de privacidad</Text>.
+              Acepto los <Text style={estilos.terminosBlanco}>terminos y condiciones</Text> y la{' '}
+              <Text style={estilos.terminosBlanco}>politica de privacidad</Text>.
             </Text>
-          </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setMostrarPoliticas((valorActual) => !valorActual)}
+          >
+            <Text style={estilos.leerMas}>
+              {mostrarPoliticas ? 'Ocultar' : 'Leer mas'}
+            </Text>
+          </TouchableOpacity>
+
+          {mostrarPoliticas && (
+            <View style={estilos.politicasBox}>
+              <Text style={estilos.politicasTexto}>
+                ViajaYa usa tus datos para crear tu cuenta, iniciar sesion, guardar tus viajes y
+                mostrarte opciones de movilidad. No compartimos tu contrasena y podes pedir cambios
+                o eliminacion de tus datos desde soporte.
+              </Text>
+            </View>
+          )}
 
           <TouchableOpacity onPress={manejarRegistroUsuario} activeOpacity={0.85}>
             <LinearGradient
@@ -239,7 +262,7 @@ export default function RegisterScreen({ navigation }) {
           onPress={() => navigation.navigate('Login')}
         >
           <Text style={estilos.loginTexto}>
-            ¿Ya tenés cuenta? <Text style={estilos.loginLink}>Iniciar sesión</Text>
+            ¿Ya tenes cuenta? <Text style={estilos.loginLink}>Iniciar sesion</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -306,37 +329,12 @@ const estilos = StyleSheet.create({
     marginTop: 30,
   },
 
-  progresoBox: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-
-  progresoActivo: {
-    flex: 1,
-    height: 6,
-    borderRadius: 6,
-  },
-
-  progresoInactivo: {
-    flex: 1,
-    height: 6,
-    borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.10)',
-  },
-
-  paso: {
-    color: '#94A3B8',
-    fontSize: 11,
-    marginTop: 14,
-  },
-
   titulo: {
     color: '#FFFFFF',
     fontSize: 32,
     lineHeight: 36,
     fontWeight: '900',
     marginTop: 10,
-    letterSpacing: -0.7,
   },
 
   subtitulo: {
@@ -411,6 +409,12 @@ const estilos = StyleSheet.create({
     marginRight: 10,
   },
 
+  checkBoxVacio: {
+    backgroundColor: 'rgba(255,255,255,0.045)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+
   checkTexto: {
     color: '#FFFFFF',
     fontWeight: 'bold',
@@ -425,6 +429,30 @@ const estilos = StyleSheet.create({
 
   terminosBlanco: {
     color: '#FFFFFF',
+  },
+
+  leerMas: {
+    color: '#22C55E',
+    fontSize: 11,
+    fontWeight: '800',
+    marginLeft: 32,
+    marginTop: 4,
+  },
+
+  politicasBox: {
+    marginLeft: 32,
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.045)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+  },
+
+  politicasTexto: {
+    color: '#B8C1CC',
+    fontSize: 11,
+    lineHeight: 17,
   },
 
   botonPrincipal: {

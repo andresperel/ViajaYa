@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 import {
   SafeAreaView,
@@ -10,58 +11,121 @@ import {
   StyleSheet,
 } from 'react-native';
 
+import { API_URL, setAuthToken } from '../services/api';
+
+const GOOGLE_CONFIG = {
+  expoClientId: process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID,
+  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+};
+
 export default function LoginScreen({ navigation }) {
   const [correoIngresado, setCorreoIngresado] = useState('');
-  const [contraseñaIngresada, setContraseñaIngresada] = useState('');
+  const [passwordIngresada, setPasswordIngresada] = useState('');
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
 
-  const API_URL = process.env.EXPO_PUBLIC_API_URL;
+  const navegarConSesion = (datosRecibidos) => {
+    setAuthToken(datosRecibidos.token);
+    navigation.navigate('Home', {
+      usuario: datosRecibidos.usuario,
+    });
+  };
 
   const manejarInicioSesion = async () => {
     setMensajeEnPantalla('');
 
-    if (!correoIngresado || !contraseñaIngresada) {
-      setMensajeEnPantalla('Completá todos los campos');
+    if (!correoIngresado || !passwordIngresada) {
+      setMensajeEnPantalla('Completa todos los campos');
       return;
     }
 
     try {
       setMensajeEnPantalla('Ingresando...');
 
-      const respuestaDelServidor = await fetch(
-        `${API_URL}/login`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: correoIngresado.trim().toLowerCase(),
-            password: contraseñaIngresada.trim(),
-          }),
-        }
-      );
+      const respuestaDelServidor = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: correoIngresado.trim().toLowerCase(),
+          password: passwordIngresada.trim(),
+        }),
+      });
 
       const datosRecibidos = await respuestaDelServidor.json();
 
       if (respuestaDelServidor.ok) {
-        navigation.navigate('Home', {
-          usuario: datosRecibidos.usuario,
-        });
+        navegarConSesion(datosRecibidos);
       } else {
-        setMensajeEnPantalla(datosRecibidos.mensaje || 'No pude iniciar sesión');
+        setMensajeEnPantalla(datosRecibidos.mensaje || 'No pude iniciar sesion');
       }
-
     } catch (error) {
       setMensajeEnPantalla('No pude conectarme con el servidor');
-      console.log('Error al iniciar sesión:', error);
+      console.log('Error al iniciar sesion:', error);
+    }
+  };
+
+  const iniciarSesionSocialBackend = async ({ provider, email, nombre }) => {
+    const respuestaDelServidor = await fetch(`${API_URL}/social-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, email, nombre }),
+    });
+    const datosRecibidos = await respuestaDelServidor.json();
+
+    if (!respuestaDelServidor.ok) {
+      throw new Error(datosRecibidos.mensaje || `No pude ingresar con ${provider}`);
+    }
+
+    navegarConSesion(datosRecibidos);
+  };
+
+  const manejarGoogle = async () => {
+    setMensajeEnPantalla(
+      GOOGLE_CONFIG.iosClientId || GOOGLE_CONFIG.androidClientId || GOOGLE_CONFIG.expoClientId || GOOGLE_CONFIG.webClientId
+        ? 'Google esta pendiente de conectar con OAuth real'
+        : 'Para usar Google falta cargar el Client ID en el .env'
+    );
+  };
+
+  const manejarApple = async () => {
+    try {
+      const disponible = await AppleAuthentication.isAvailableAsync();
+      if (!disponible) {
+        setMensajeEnPantalla('Apple Sign In solo esta disponible en dispositivos Apple compatibles');
+        return;
+      }
+
+      setMensajeEnPantalla('Abriendo Apple...');
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const nombre = [credential.fullName?.givenName, credential.fullName?.familyName]
+        .filter(Boolean)
+        .join(' ');
+
+      await iniciarSesionSocialBackend({
+        provider: 'apple',
+        email: credential.email || `${credential.user}@apple.viajaya`,
+        nombre: nombre || 'Usuario Apple',
+      });
+    } catch (error) {
+      if (error.code === 'ERR_REQUEST_CANCELED') {
+        setMensajeEnPantalla('');
+        return;
+      }
+      setMensajeEnPantalla(error.message || 'No pude ingresar con Apple');
+      console.log('Error de Apple:', error);
     }
   };
 
   return (
     <SafeAreaView style={estilos.container}>
       <View style={estilos.contenido}>
-
         <TouchableOpacity
           style={estilos.botonVolver}
           onPress={() => navigation.navigate('Welcome')}
@@ -69,30 +133,18 @@ export default function LoginScreen({ navigation }) {
           <Text style={estilos.botonVolverTexto}>←</Text>
         </TouchableOpacity>
 
-        <View style={estilos.logoBoxWrapper}>
-          <LinearGradient
-            colors={['#2563EB', '#22C55E']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={estilos.logoBox}
-          >
-            <Text style={estilos.logoIcono}>↗</Text>
-          </LinearGradient>
-        </View>
-
-        <View style={estilos.header}>
-          <Text style={estilos.titulo}>Bienvenido de nuevo</Text>
-          <Text style={estilos.subtitulo}>Ingresá para continuar.</Text>
+        <View style={estilos.headerLogin}>
+          <Text style={estilos.titulo}>Iniciar sesion</Text>
+          <Text style={estilos.subtitulo}>Ingresa para continuar.</Text>
         </View>
 
         <View style={estilos.formulario}>
-
-          <Text style={estilos.label}>Correo electrónico</Text>
+          <Text style={estilos.label}>Correo electronico</Text>
           <View style={estilos.inputBox}>
             <Text style={estilos.inputIcono}>✉️</Text>
             <TextInput
               style={estilos.input}
-              placeholder="vos@ejemplo.com"
+              placeholder="maria@ejemplo.com"
               placeholderTextColor="#7F8EA3"
               value={correoIngresado}
               onChangeText={setCorreoIngresado}
@@ -100,23 +152,21 @@ export default function LoginScreen({ navigation }) {
             />
           </View>
 
-          <Text style={estilos.label}>Contraseña</Text>
+          <Text style={estilos.label}>Contrasena</Text>
           <View style={estilos.inputBox}>
             <Text style={estilos.inputIcono}>🔒</Text>
             <TextInput
               style={estilos.input}
-              placeholder="••••••••"
+              placeholder="Minimo 6 caracteres"
               placeholderTextColor="#7F8EA3"
               secureTextEntry
-              value={contraseñaIngresada}
-              onChangeText={setContraseñaIngresada}
+              value={passwordIngresada}
+              onChangeText={setPasswordIngresada}
             />
           </View>
 
-          <TouchableOpacity>
-            <Text style={estilos.olvidaste}>
-              ¿Olvidaste tu contraseña?
-            </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('ResetPassword')}>
+            <Text style={estilos.olvidaste}>¿Olvidaste tu contrasena?</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -129,30 +179,31 @@ export default function LoginScreen({ navigation }) {
               end={{ x: 1, y: 0 }}
               style={estilos.botonPrincipal}
             >
-              <Text style={estilos.textoBotonPrincipal}>
-                Ingresar
-              </Text>
+              <Text style={estilos.textoBotonPrincipal}>Ingresar</Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          <Text style={estilos.mensaje}>
-            {mensajeEnPantalla}
-          </Text>
-
+          <Text style={estilos.mensaje}>{mensajeEnPantalla}</Text>
         </View>
 
         <View style={estilos.divisorBox}>
           <View style={estilos.linea} />
-          <Text style={estilos.divisorTexto}>O CONTINUÁ CON</Text>
+          <Text style={estilos.divisorTexto}>O CONTINUA CON</Text>
           <View style={estilos.linea} />
         </View>
 
         <View style={estilos.socialBox}>
-          <TouchableOpacity style={estilos.socialBoton}>
+          <TouchableOpacity
+            style={estilos.socialBoton}
+            onPress={manejarApple}
+          >
             <Text style={estilos.socialTexto}> Apple</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={estilos.socialBoton}>
+          <TouchableOpacity
+            style={estilos.socialBoton}
+            onPress={manejarGoogle}
+          >
             <Text style={estilos.socialTexto}>G Google</Text>
           </TouchableOpacity>
         </View>
@@ -162,10 +213,9 @@ export default function LoginScreen({ navigation }) {
           onPress={() => navigation.navigate('Register')}
         >
           <Text style={estilos.crearCuentaTexto}>
-            ¿No tenés cuenta? <Text style={estilos.crearCuentaLink}>Crear cuenta</Text>
+            ¿No tenes cuenta? <Text style={estilos.crearCuentaLink}>Crear cuenta</Text>
           </Text>
         </TouchableOpacity>
-
       </View>
     </SafeAreaView>
   );
@@ -179,15 +229,16 @@ const estilos = StyleSheet.create({
 
   contenido: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 24,
     paddingTop: 18,
+    paddingBottom: 28,
   },
 
   botonVolver: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.045)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
     justifyContent: 'center',
@@ -199,50 +250,31 @@ const estilos = StyleSheet.create({
     fontSize: 24,
   },
 
-  logoBoxWrapper: {
-    alignItems: 'center',
-    marginTop: 34,
-  },
-
-  logoBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  logoIcono: {
-    color: '#FFFFFF',
-    fontSize: 34,
-    fontWeight: '900',
-  },
-
-  header: {
-    marginTop: 26,
-    alignItems: 'center',
+  headerLogin: {
+    marginTop: 30,
   },
 
   titulo: {
     color: '#FFFFFF',
-    fontSize: 30,
+    fontSize: 32,
+    lineHeight: 36,
     fontWeight: '900',
-    textAlign: 'center',
+    marginTop: 10,
   },
 
   subtitulo: {
-    color: '#B8C1CC',
+    color: '#94A3B8',
     fontSize: 14,
     marginTop: 8,
   },
 
   formulario: {
-    marginTop: 34,
+    marginTop: 26,
   },
 
   label: {
     color: '#B8C1CC',
-    fontSize: 12,
+    fontSize: 11,
     marginLeft: 4,
     marginBottom: 7,
     fontWeight: '600',
@@ -299,6 +331,7 @@ const estilos = StyleSheet.create({
     textAlign: 'center',
     fontWeight: 'bold',
     marginTop: 14,
+    minHeight: 18,
   },
 
   divisorBox: {
@@ -317,7 +350,6 @@ const estilos = StyleSheet.create({
   divisorTexto: {
     color: '#7F8EA3',
     fontSize: 10,
-    letterSpacing: 2,
     marginHorizontal: 10,
   },
 
@@ -335,6 +367,10 @@ const estilos = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.10)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  socialBotonDeshabilitado: {
+    opacity: 0.55,
   },
 
   socialTexto: {

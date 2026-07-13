@@ -29,7 +29,7 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
       return;
     }
 
-    if (empresaElegida === 'Didi') {
+    if (empresaElegida === 'Didi' || empresaElegida === 'DiDi') {
       Linking.openURL('https://web.didiglobal.com/');
       return;
     }
@@ -37,7 +37,7 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
 
   const obtenerColorEmpresa = () => {
     if (empresaElegida === 'Uber') return '#000000';
-    if (empresaElegida === 'Didi') return '#FF7A00';
+    if (empresaElegida === 'Didi' || empresaElegida === 'DiDi') return '#FF7A00';
     if (empresaElegida === 'Cabify') return '#7B61FF';
     return '#2563EB';
   };
@@ -154,7 +154,14 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
 
         <TouchableOpacity
           style={estilos.botonSecundario}
-          onPress={() => navigation.navigate('Home', { usuario })}
+          onPress={() => navigation.navigate('Home', {
+            usuario,
+            notificaciones: [{
+              id: Date.now(),
+              titulo: 'Viaje guardado',
+              texto: `Tu viaje con ${empresaElegida} quedo guardado en Mis viajes.`,
+            }],
+          })}
         >
           <Text style={estilos.textoBotonSecundario}>Volver al inicio</Text>
         </TouchableOpacity>

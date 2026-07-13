@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { apiFetch } from '../services/api';
 
@@ -11,6 +11,12 @@ import {
   ScrollView,
 } from 'react-native';
 
+const FILTROS = [
+  { id: 'barato', label: 'Mas barata' },
+  { id: 'rapido', label: 'Mas rapida' },
+  { id: 'recomendado', label: 'Recomendada' },
+];
+
 export default function ResultadosScreen({ navigation, route }) {
   const {
     origenIngresado,
@@ -20,13 +26,31 @@ export default function ResultadosScreen({ navigation, route }) {
   } = route.params;
 
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
+  const [filtroActivo, setFiltroActivo] = useState('barato');
   const opciones = datosViaje?.opciones || [];
+  const ruta = datosViaje?.ruta || {};
+
+  const opcionesOrdenadas = useMemo(() => {
+    const copia = [...opciones];
+
+    if (filtroActivo === 'barato') {
+      return copia.sort((a, b) => a.precio - b.precio);
+    }
+    if (filtroActivo === 'rapido') {
+      return copia.sort((a, b) => (a.duracionMin || 999) - (b.duracionMin || 999));
+    }
+    return copia.sort((a, b) => {
+      const scoreA = (a.rating || 0) + (a.confort || 0) - (a.precio / 10000);
+      const scoreB = (b.rating || 0) + (b.confort || 0) - (b.precio / 10000);
+      return scoreB - scoreA;
+    });
+  }, [opciones, filtroActivo]);
 
   const elegirViaje = async (oferta) => {
     setMensajeEnPantalla('');
 
     if (!usuario) {
-      setMensajeEnPantalla('No se encontró el usuario logueado');
+      setMensajeEnPantalla('No se encontro el usuario logueado');
       return;
     }
 
@@ -39,7 +63,7 @@ export default function ResultadosScreen({ navigation, route }) {
           calleOrigen: origenIngresado,
           calleDestino: destinoIngresado,
           precioEstimado: oferta.precio,
-          tiempoEstimado: oferta.tiempoEstimado,
+          tiempoEstimado: oferta.duracionMin || oferta.tiempoEstimado || ruta.duracionMin,
           idTipoServicio: oferta.idTipoServicio,
         }),
       });
@@ -49,18 +73,17 @@ export default function ResultadosScreen({ navigation, route }) {
         precioElegido: oferta.precio,
         usuario,
       });
-
     } catch (error) {
-      setMensajeEnPantalla('No pude guardar el viaje');
+      setMensajeEnPantalla(error.message || 'No pude guardar el viaje');
       console.log('Error al guardar viaje:', error);
     }
   };
 
-  const obtenerBadge = (index) => {
-    if (index === 0) return '💸 Más barato';
-    if (index === 1) return '⚡ Más rápido';
-    if (index === 2) return '🏆 Mejor valorado';
-    return '';
+  const obtenerBadge = (oferta, index) => {
+    if (index === 0 && filtroActivo === 'barato') return '💸 Mas barata';
+    if (index === 0 && filtroActivo === 'rapido') return '⚡ Mas rapida';
+    if (index === 0 && filtroActivo === 'recomendado') return '🏆 Recomendada';
+    return oferta.recomendacion || '';
   };
 
   return (
@@ -69,7 +92,6 @@ export default function ResultadosScreen({ navigation, route }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={estilos.contenido}
       >
-
         <View style={estilos.header}>
           <TouchableOpacity
             style={estilos.botonCircular}
@@ -84,40 +106,48 @@ export default function ResultadosScreen({ navigation, route }) {
             </Text>
 
             <Text style={estilos.tituloHeader} numberOfLines={1}>
-              {opciones.length} viajes encontrados · {datosViaje?.distanciaKm} km
+              {opciones.length} opciones · {ruta.distanciaKm || datosViaje?.distanciaKm} km
             </Text>
           </View>
 
-          <View style={estilos.botonCircular}>
-            <Text style={estilos.filtro}>☰</Text>
-          </View>
         </View>
 
-        <View style={estilos.mapaCard}>
-          <LinearGradient
-            colors={['rgba(37,99,235,0.35)', 'rgba(34,197,94,0.22)']}
-            start={{ x: 0, y: 1 }}
-            end={{ x: 1, y: 0 }}
-            style={estilos.mapaFondo}
-          />
+        <View style={estilos.resumenRuta}>
+          <Text style={estilos.resumenTitulo}>Ruta real por calles</Text>
+          <Text style={estilos.resumenTexto}>
+            {ruta.distanciaKm || datosViaje?.distanciaKm} km · {ruta.duracionMin || datosViaje?.duracionMin} min aprox. · {ruta.proveedor || 'rutas'}
+          </Text>
+        </View>
 
-          <View style={estilos.rutaLineaUno} />
-          <View style={estilos.rutaLineaDos} />
-          <View style={estilos.pinOrigen} />
-          <View style={estilos.pinDestino} />
-
-          <View style={estilos.mapaInfo}>
-            <Text style={estilos.mapaTitulo}>Ruta calculada con API real</Text>
-            <Text style={estilos.mapaTexto} numberOfLines={1}>
-              {datosViaje?.distanciaKm} km · {datosViaje?.duracionMin} min aprox.
-            </Text>
-          </View>
+        <View style={estilos.filtrosBox}>
+          {FILTROS.map((filtro) => (
+            <TouchableOpacity
+              key={filtro.id}
+              activeOpacity={0.85}
+              onPress={() => setFiltroActivo(filtro.id)}
+            >
+              {filtroActivo === filtro.id ? (
+                <LinearGradient
+                  colors={['#2563EB', '#22C55E']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={estilos.filtroActivo}
+                >
+                  <Text style={estilos.filtroActivoTexto}>{filtro.label}</Text>
+                </LinearGradient>
+              ) : (
+                <View style={estilos.filtroChip}>
+                  <Text style={estilos.filtroChipTexto}>{filtro.label}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
         </View>
 
         <View style={estilos.lista}>
-          {opciones.map((oferta, index) => (
+          {opcionesOrdenadas.map((oferta, index) => (
             <TouchableOpacity
-              key={index}
+              key={`${oferta.empresa}-${oferta.tipo}`}
               activeOpacity={0.88}
               onPress={() => elegirViaje(oferta)}
             >
@@ -126,13 +156,12 @@ export default function ResultadosScreen({ navigation, route }) {
                   style={[
                     estilos.logoEmpresa,
                     oferta.empresa === 'Uber' && estilos.logoUber,
+                    oferta.empresa === 'DiDi' && estilos.logoDidi,
                     oferta.empresa === 'Didi' && estilos.logoDidi,
                     oferta.empresa === 'Cabify' && estilos.logoCabify,
                   ]}
                 >
-                  <Text style={estilos.logoTexto}>
-                    {oferta.empresa.charAt(0)}
-                  </Text>
+                  <Text style={estilos.logoTexto}>{oferta.empresa.charAt(0)}</Text>
                 </View>
 
                 <View style={estilos.infoOferta}>
@@ -142,20 +171,18 @@ export default function ResultadosScreen({ navigation, route }) {
                   </Text>
 
                   <Text style={estilos.detalleTexto}>
-                    {oferta.tiempoEstimado} min viaje
+                    {oferta.llegadaMin} min llegada · {oferta.duracionMin} min viaje
                   </Text>
 
-                  {obtenerBadge(index) !== '' && (
+                  {obtenerBadge(oferta, index) !== '' && (
                     <View style={estilos.badge}>
-                      <Text style={estilos.badgeTexto}>{obtenerBadge(index)}</Text>
+                      <Text style={estilos.badgeTexto}>{obtenerBadge(oferta, index)}</Text>
                     </View>
                   )}
                 </View>
 
                 <View style={estilos.precioBox}>
-                  <Text style={estilos.precio}>
-                    ${oferta.precio.toLocaleString('es-AR')}
-                  </Text>
+                  <Text style={estilos.precio}>${oferta.precio.toLocaleString('es-AR')}</Text>
 
                   <LinearGradient
                     colors={['#2563EB', '#22C55E']}
@@ -172,7 +199,6 @@ export default function ResultadosScreen({ navigation, route }) {
         </View>
 
         <Text style={estilos.mensaje}>{mensajeEnPantalla}</Text>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -181,7 +207,6 @@ export default function ResultadosScreen({ navigation, route }) {
 const estilos = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0F1F3A' },
   contenido: { padding: 24, paddingBottom: 40 },
-
   header: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   botonCircular: {
     width: 42,
@@ -194,64 +219,41 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
   },
   flecha: { color: '#FFFFFF', fontSize: 24 },
-  filtro: { color: '#FFFFFF', fontSize: 20 },
   headerTexto: { flex: 1, marginHorizontal: 12 },
   rutaChica: { color: '#9CA3AF', fontSize: 12 },
   tituloHeader: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold', marginTop: 3 },
-
-  mapaCard: {
+  resumenRuta: {
     marginTop: 18,
-    height: 122,
-    borderRadius: 24,
-    overflow: 'hidden',
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
-    backgroundColor: '#152A4D',
-    position: 'relative',
+    padding: 16,
   },
-  mapaFondo: { ...StyleSheet.absoluteFillObject },
-  rutaLineaUno: {
-    position: 'absolute',
-    height: 3,
-    width: 250,
-    backgroundColor: '#2563EB',
-    left: 22,
-    top: 82,
-    transform: [{ rotate: '-18deg' }],
-    borderRadius: 4,
+  resumenTitulo: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
+  resumenTexto: { color: '#B8C1CC', fontSize: 12, marginTop: 5 },
+  filtrosBox: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 16,
   },
-  rutaLineaDos: {
-    position: 'absolute',
-    height: 3,
-    width: 170,
-    backgroundColor: '#22C55E',
-    right: 16,
-    top: 44,
-    transform: [{ rotate: '-28deg' }],
-    borderRadius: 4,
+  filtroActivo: {
+    height: 36,
+    paddingHorizontal: 13,
+    borderRadius: 18,
+    justifyContent: 'center',
   },
-  pinOrigen: {
-    position: 'absolute',
-    left: 28,
-    bottom: 24,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#FFFFFF',
+  filtroActivoTexto: { color: '#FFFFFF', fontSize: 11, fontWeight: '900' },
+  filtroChip: {
+    height: 36,
+    paddingHorizontal: 13,
+    borderRadius: 18,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
-  pinDestino: {
-    position: 'absolute',
-    right: 26,
-    top: 22,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#22C55E',
-  },
-  mapaInfo: { position: 'absolute', left: 16, bottom: 14 },
-  mapaTitulo: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
-  mapaTexto: { color: '#B8C1CC', fontSize: 11, marginTop: 3 },
-
+  filtroChipTexto: { color: '#B8C1CC', fontSize: 11, fontWeight: '800' },
   lista: { marginTop: 18 },
   cardOferta: {
     minHeight: 98,
@@ -275,7 +277,6 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   logoEmpresa: {
     width: 52,
     height: 52,
@@ -288,12 +289,10 @@ const estilos = StyleSheet.create({
   logoDidi: { backgroundColor: '#FF7A00' },
   logoCabify: { backgroundColor: '#7B61FF' },
   logoTexto: { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
-
   infoOferta: { flex: 1 },
   nombreEmpresa: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
   tipoServicio: { color: '#B8C1CC', fontWeight: '400' },
   detalleTexto: { color: '#9CA3AF', fontSize: 11, marginTop: 6 },
-
   badge: {
     alignSelf: 'flex-start',
     marginTop: 9,
@@ -304,7 +303,6 @@ const estilos = StyleSheet.create({
     justifyContent: 'center',
   },
   badgeTexto: { color: '#FFFFFF', fontSize: 10, fontWeight: '900' },
-
   precioBox: { alignItems: 'flex-end', marginLeft: 10 },
   precio: { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
   botonElegir: {
@@ -316,7 +314,6 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
   },
   textoElegir: { color: '#FFFFFF', fontSize: 11, fontWeight: '900' },
-
   mensaje: {
     color: '#22C55E',
     textAlign: 'center',

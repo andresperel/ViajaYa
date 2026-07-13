@@ -11,11 +11,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import WelcomeScreen from './screens/WelcomeScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
+import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import HomeScreen from './screens/HomeScreen';
 import ResultadosScreen from './screens/ResultadosScreen';
 import ViajeConfirmadoScreen from './screens/ViajeConfirmadoScreen';
 import MisViajesScreen from './screens/MisViajesScreen';
 import PerfilScreen from './screens/PerfilScreen';
+import NotificacionesScreen from './screens/NotificacionesScreen';
 
 // Creo el Stack Navigator para manejar las pantallas.
 const Stack = createNativeStackNavigator();
@@ -50,6 +52,11 @@ export default function App() {
           component={RegisterScreen}
         />
 
+        <Stack.Screen
+          name="ResetPassword"
+          component={ResetPasswordScreen}
+        />
+
         {/* Pantalla principal */}
         <Stack.Screen
           name="Home"
@@ -78,6 +85,11 @@ export default function App() {
         <Stack.Screen
           name="Perfil"
           component={PerfilScreen}
+        />
+
+        <Stack.Screen
+          name="Notificaciones"
+          component={NotificacionesScreen}
         />
 
       </Stack.Navigator>

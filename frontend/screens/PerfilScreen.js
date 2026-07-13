@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import { getMyTripStats } from '../services/api';
 
 import {
   SafeAreaView,
@@ -12,6 +13,24 @@ import {
 
 export default function PerfilScreen({ navigation, route }) {
   const usuario = route.params?.usuario;
+  const [cantidadViajes, setCantidadViajes] = useState(0);
+  const [totalGastado, setTotalGastado] = useState(0);
+
+  useEffect(() => {
+    cargarStats();
+  }, []);
+
+  const cargarStats = async () => {
+    try {
+      const stats = await getMyTripStats();
+      setCantidadViajes(Number(stats.cantidad || 0));
+      setTotalGastado(Number(stats.totalGastado || 0));
+    } catch (error) {
+      setCantidadViajes(0);
+      setTotalGastado(0);
+      console.log('Error al cargar stats de perfil:', error);
+    }
+  };
 
   if (!usuario) {
     return (
@@ -21,13 +40,10 @@ export default function PerfilScreen({ navigation, route }) {
 
           <View style={estilos.cardPerfil}>
             <Text style={estilos.nombre}>No pude cargar los datos</Text>
-            <Text style={estilos.email}>Volvé a iniciar sesión para ver tu perfil.</Text>
+            <Text style={estilos.email}>Volve a iniciar sesion para ver tu perfil.</Text>
           </View>
 
-          <TouchableOpacity
-            style={estilos.botonSecundario}
-            onPress={() => navigation.navigate('Login')}
-          >
+          <TouchableOpacity style={estilos.botonSecundario} onPress={() => navigation.navigate('Login')}>
             <Text style={estilos.textoBotonSecundario}>Volver al login</Text>
           </TouchableOpacity>
         </View>
@@ -37,10 +53,7 @@ export default function PerfilScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={estilos.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={estilos.contenido}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={estilos.contenido}>
         <View style={estilos.header}>
           <Text style={estilos.titulo}>Perfil</Text>
         </View>
@@ -58,51 +71,35 @@ export default function PerfilScreen({ navigation, route }) {
           </LinearGradient>
 
           <View style={estilos.infoUsuario}>
-            <Text style={estilos.nombre} numberOfLines={1}>
-              {usuario.nombre}
-            </Text>
-
-            <Text style={estilos.email} numberOfLines={1}>
-              {usuario.email}
-            </Text>
-
-            <View style={estilos.premiumBox}>
-              <Text style={estilos.premiumTexto}>⭐ 4,96 · Premium</Text>
+            <Text style={estilos.nombre} numberOfLines={1}>{usuario.nombre}</Text>
+            <Text style={estilos.email} numberOfLines={1}>{usuario.email}</Text>
+            <View style={estilos.estadoBox}>
+              <Text style={estilos.estadoTexto}>Cuenta activa</Text>
             </View>
           </View>
         </View>
 
         <View style={estilos.statsGrid}>
-          <Stat value="48" label="Viajes" />
-          <Stat value="$182k" label="Ahorrado" />
-          <Stat value="12" label="Meses" />
+          <Stat value={String(cantidadViajes)} label="Viajes" />
+          <Stat value={`$${totalGastado.toLocaleString('es-AR')}`} label="Gastado" />
+          <Stat value={cantidadViajes > 0 ? 'Activo' : 'Nuevo'} label="Estado" />
         </View>
 
         <View style={estilos.lista}>
-          <Item icono="💳" titulo="Métodos de pago" subtitulo="Mastercard •••• 4242" />
-          <Item icono="🔔" titulo="Notificaciones" subtitulo="Promos y avisos" />
+          <Item icono="💳" titulo="Metodos de pago" subtitulo="Sin metodo cargado" />
+          <Item icono="🔔" titulo="Notificaciones" subtitulo="Promos y avisos" onPress={() => navigation.navigate('Notificaciones', { usuario })} />
           <Item icono="🛡️" titulo="Privacidad y seguridad" subtitulo="Datos y permisos" />
           <Item icono="⚙️" titulo="Preferencias" subtitulo="Idioma, moneda" />
-          <Item icono="❔" titulo="Ayuda" subtitulo="Centro de ayuda y soporte" />
+          <Item icono="?" titulo="Ayuda" subtitulo="Centro de ayuda y soporte" />
         </View>
 
-        <TouchableOpacity
-          style={estilos.botonSecundario}
-          onPress={() => navigation.navigate('Home', { usuario })}
-        >
+        <TouchableOpacity style={estilos.botonSecundario} onPress={() => navigation.navigate('Home', { usuario })}>
           <Text style={estilos.textoBotonSecundario}>Volver al inicio</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={estilos.botonCerrar}
-          onPress={() => navigation.navigate('Welcome')}
-        >
-          <Text style={estilos.textoCerrar}>↩ Cerrar sesión</Text>
+        <TouchableOpacity style={estilos.botonCerrar} onPress={() => navigation.navigate('Welcome')}>
+          <Text style={estilos.textoCerrar}>Cerrar sesion</Text>
         </TouchableOpacity>
-
-        <Text style={estilos.version}>
-          ViajaYA v2.0 · Buenos Aires, AR
-        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -117,9 +114,9 @@ function Stat({ value, label }) {
   );
 }
 
-function Item({ icono, titulo, subtitulo }) {
+function Item({ icono, titulo, subtitulo, onPress }) {
   return (
-    <TouchableOpacity style={estilos.item} activeOpacity={0.85}>
+    <TouchableOpacity style={estilos.item} activeOpacity={0.85} onPress={onPress}>
       <View style={estilos.itemIconBox}>
         <Text style={estilos.itemIcon}>{icono}</Text>
       </View>
@@ -135,27 +132,10 @@ function Item({ icono, titulo, subtitulo }) {
 }
 
 const estilos = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0F1F3A',
-  },
-
-  contenido: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-
-  header: {
-    marginTop: 8,
-  },
-
-  titulo: {
-    color: '#FFFFFF',
-    fontSize: 30,
-    fontWeight: '900',
-    letterSpacing: -0.5,
-  },
-
+  container: { flex: 1, backgroundColor: '#0F1F3A' },
+  contenido: { padding: 24, paddingBottom: 40 },
+  header: { marginTop: 8 },
+  titulo: { color: '#FFFFFF', fontSize: 30, fontWeight: '900' },
   cardPerfil: {
     marginTop: 22,
     borderRadius: 28,
@@ -166,55 +146,14 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
-  avatar: {
-    width: 66,
-    height: 66,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-
-  inicial: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '900',
-  },
-
-  infoUsuario: {
-    flex: 1,
-  },
-
-  nombre: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '900',
-  },
-
-  email: {
-    color: '#94A3B8',
-    fontSize: 12,
-    marginTop: 4,
-  },
-
-  premiumBox: {
-    alignSelf: 'flex-start',
-    marginTop: 8,
-  },
-
-  premiumTexto: {
-    color: '#22C55E',
-    fontSize: 11,
-    fontWeight: '900',
-  },
-
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
-  },
-
+  avatar: { width: 66, height: 66, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  inicial: { color: '#FFFFFF', fontSize: 28, fontWeight: '900' },
+  infoUsuario: { flex: 1 },
+  nombre: { color: '#FFFFFF', fontSize: 17, fontWeight: '900' },
+  email: { color: '#94A3B8', fontSize: 12, marginTop: 4 },
+  estadoBox: { alignSelf: 'flex-start', marginTop: 8 },
+  estadoTexto: { color: '#22C55E', fontSize: 11, fontWeight: '900' },
+  statsGrid: { flexDirection: 'row', gap: 10, marginTop: 14 },
   statCard: {
     flex: 1,
     borderRadius: 20,
@@ -224,24 +163,9 @@ const estilos = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
-
-  statValue: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '900',
-  },
-
-  statLabel: {
-    color: '#94A3B8',
-    fontSize: 10,
-    marginTop: 3,
-  },
-
-  lista: {
-    marginTop: 20,
-    gap: 10,
-  },
-
+  statValue: { color: '#FFFFFF', fontSize: 17, fontWeight: '900' },
+  statLabel: { color: '#94A3B8', fontSize: 10, marginTop: 3 },
+  lista: { marginTop: 20, gap: 10 },
   item: {
     minHeight: 72,
     borderRadius: 22,
@@ -252,42 +176,12 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
-  itemIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 15,
-    backgroundColor: 'rgba(37,99,235,0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-
-  itemIcon: {
-    fontSize: 18,
-  },
-
-  itemTexto: {
-    flex: 1,
-  },
-
-  itemTitulo: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-
-  itemSubtitulo: {
-    color: '#94A3B8',
-    fontSize: 11,
-    marginTop: 3,
-  },
-
-  chevron: {
-    color: '#94A3B8',
-    fontSize: 26,
-  },
-
+  itemIconBox: { width: 42, height: 42, borderRadius: 15, backgroundColor: 'rgba(37,99,235,0.18)', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  itemIcon: { fontSize: 18 },
+  itemTexto: { flex: 1 },
+  itemTitulo: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  itemSubtitulo: { color: '#94A3B8', fontSize: 11, marginTop: 3 },
+  chevron: { color: '#94A3B8', fontSize: 26 },
   botonSecundario: {
     height: 52,
     borderRadius: 18,
@@ -298,13 +192,7 @@ const estilos = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  textoBotonSecundario: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-
+  textoBotonSecundario: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   botonCerrar: {
     height: 52,
     borderRadius: 18,
@@ -315,17 +203,5 @@ const estilos = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  textoCerrar: {
-    color: '#94A3B8',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-
-  version: {
-    marginTop: 14,
-    textAlign: 'center',
-    color: '#64748B',
-    fontSize: 10,
-  },
+  textoCerrar: { color: '#94A3B8', fontSize: 15, fontWeight: '800' },
 });

@@ -57,7 +57,7 @@ export default function ResultadosScreen({ navigation, route }) {
     try {
       setMensajeEnPantalla('Guardando viaje...');
 
-      await apiFetch('/viaje', {
+      const viajeGuardado = await apiFetch('/viaje', {
         method: 'POST',
         body: JSON.stringify({
           calleOrigen: origenIngresado,
@@ -71,6 +71,12 @@ export default function ResultadosScreen({ navigation, route }) {
       navigation.navigate('ViajeConfirmado', {
         empresaElegida: oferta.empresa,
         precioElegido: oferta.precio,
+        ofertaElegida: oferta,
+        viaje: viajeGuardado.viaje,
+        origenIngresado,
+        destinoIngresado,
+        origenCoordenadas: datosViaje?.origen?.coordinates,
+        destinoCoordenadas: datosViaje?.destino?.coordinates,
         usuario,
       });
     } catch (error) {

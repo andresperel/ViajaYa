@@ -2,6 +2,10 @@
   "expo": {
     "name": "front",
     "slug": "front",
+    "scheme": [
+      "viajaya",
+      "com.viajaya.app"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,6 +20,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.viajaya.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#ffffff"
@@ -26,7 +31,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.571048823354-t37adolficj1upalbpas7hadaasgdtpt"
+        }
+      ]
     ]
   }
 }

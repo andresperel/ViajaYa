@@ -20,6 +20,17 @@ const GOOGLE_CONFIG = {
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
 };
 
+let googleNativo = null;
+try {
+  googleNativo = require('@react-native-google-signin/google-signin');
+  googleNativo.GoogleSignin.configure({
+    webClientId: GOOGLE_CONFIG.webClientId,
+    offlineAccess: false,
+  });
+} catch (error) {
+  // Expo Go no incluye RNGoogleSignin. La APK nativa si lo registra.
+}
+
 export default function LoginScreen({ navigation }) {
   const [correoIngresado, setCorreoIngresado] = useState('');
   const [passwordIngresada, setPasswordIngresada] = useState('');
@@ -65,11 +76,11 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const iniciarSesionSocialBackend = async ({ provider, email, nombre }) => {
+  const iniciarSesionSocialBackend = async ({ provider, email, nombre, accessToken }) => {
     const respuestaDelServidor = await fetch(`${API_URL}/social-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider, email, nombre }),
+      body: JSON.stringify({ provider, email, nombre, accessToken }),
     });
     const datosRecibidos = await respuestaDelServidor.json();
 
@@ -81,11 +92,37 @@ export default function LoginScreen({ navigation }) {
   };
 
   const manejarGoogle = async () => {
-    setMensajeEnPantalla(
-      GOOGLE_CONFIG.iosClientId || GOOGLE_CONFIG.androidClientId || GOOGLE_CONFIG.expoClientId || GOOGLE_CONFIG.webClientId
-        ? 'Google esta pendiente de conectar con OAuth real'
-        : 'Para usar Google falta cargar el Client ID en el .env'
-    );
+    if (!googleNativo?.GoogleSignin) {
+      setMensajeEnPantalla('Google requiere abrir la APK instalada, no Expo Go');
+      return;
+    }
+
+    const { GoogleSignin, isCancelledResponse } = googleNativo;
+    if (!GOOGLE_CONFIG.webClientId || !GOOGLE_CONFIG.androidClientId) {
+      setMensajeEnPantalla('Faltan las credenciales de Google');
+      return;
+    }
+
+    try {
+      setMensajeEnPantalla('Eligiendo cuenta de Google...');
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      await GoogleSignin.signOut().catch(() => {});
+      const resultado = await GoogleSignin.signIn();
+      if (isCancelledResponse(resultado)) {
+        setMensajeEnPantalla('');
+        return;
+      }
+
+      const tokens = await GoogleSignin.getTokens();
+      setMensajeEnPantalla('Validando cuenta de Google...');
+      await iniciarSesionSocialBackend({
+        provider: 'google',
+        accessToken: tokens.accessToken,
+      });
+    } catch (error) {
+      setMensajeEnPantalla(`No pude ingresar con Google${error.code ? ` (${error.code})` : ''}`);
+      console.log('Error de Google:', error);
+    }
   };
 
   const manejarApple = async () => {

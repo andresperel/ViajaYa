@@ -332,24 +332,47 @@ async function resetPassword(req, res) {
 
 async function socialLogin(req, res) {
   try {
-    const { provider, email: emailBody, nombre: nombreBody } = req.body || {};
+    const { provider, email: emailBody, nombre: nombreBody, accessToken } = req.body || {};
     const providerLimpio = String(provider || '').trim().toLowerCase();
 
     if (!['google', 'apple'].includes(providerLimpio)) {
       return res.status(400).json({ mensaje: 'Proveedor invalido.' });
     }
 
-    if (typeof emailBody !== 'string') {
+    let emailSocial = emailBody;
+    let nombreSocial = nombreBody;
+
+    if (providerLimpio === 'google') {
+      if (typeof accessToken !== 'string' || !accessToken) {
+        return res.status(400).json({ mensaje: 'Falta la credencial de Google.' });
+      }
+
+      const respuestaGoogle = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!respuestaGoogle.ok) {
+        return res.status(401).json({ mensaje: 'La sesion de Google no es valida.' });
+      }
+
+      const perfilGoogle = await respuestaGoogle.json();
+      if (!perfilGoogle.email_verified) {
+        return res.status(401).json({ mensaje: 'Google no verifico este correo.' });
+      }
+      emailSocial = perfilGoogle.email;
+      nombreSocial = perfilGoogle.name;
+    }
+
+    if (typeof emailSocial !== 'string') {
       return res.status(400).json({ mensaje: 'No recibimos el email de la cuenta.' });
     }
 
-    const email = emailBody.trim().toLowerCase();
+    const email = emailSocial.trim().toLowerCase();
     if (!EMAIL_REGEX.test(email) || email.length > 100) {
       return res.status(400).json({ mensaje: 'Email de cuenta social invalido.' });
     }
 
-    const nombre = typeof nombreBody === 'string' && nombreBody.trim()
-      ? nombreBody.trim().slice(0, 50)
+    const nombre = typeof nombreSocial === 'string' && nombreSocial.trim()
+      ? nombreSocial.trim().slice(0, 50)
       : providerLimpio === 'google' ? 'Usuario Google' : 'Usuario Apple';
 
     const { data: usuarioExistente, error: errorBusqueda } = await buscarUsuarioPorEmail(email);

@@ -88,4 +88,28 @@ async function obtenerStatsViajes(req, res) {
   return res.status(200).json({ cantidad, totalGastado });
 }
 
-module.exports = { guardarViaje, obtenerViajes, obtenerViajesPorUsuario, obtenerStatsViajes };
+async function verificarViaje(req, res) {
+  const idViaje = Number(req.params.idViaje);
+  if (!Number.isSafeInteger(idViaje) || idViaje <= 0) {
+    return res.status(400).json({ mensaje: 'El identificador del viaje no es valido.' });
+  }
+
+  const { data: viaje, error } = await supabase
+    .from('Viaje')
+    .select('*')
+    .eq('idViaje', idViaje)
+    .eq('idUsuario', req.auth.userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error al verificar viaje:', error);
+    return res.status(500).json({ mensaje: 'No se pudo verificar el viaje.' });
+  }
+  if (!viaje) {
+    return res.status(404).json({ mensaje: 'El viaje no fue encontrado.' });
+  }
+
+  return res.status(200).json({ verificado: true, viaje });
+}
+
+module.exports = { guardarViaje, obtenerViajes, obtenerViajesPorUsuario, obtenerStatsViajes, verificarViaje };

@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Clipboard from 'expo-clipboard';
+import { apiFetch } from '../services/api';
 
 import {
   SafeAreaView,
@@ -8,6 +10,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
+  Platform,
+  Alert,
   ScrollView,
 } from 'react-native';
 
@@ -15,22 +19,105 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
   const {
     empresaElegida,
     precioElegido,
+    ofertaElegida,
+    viaje,
+    origenIngresado,
+    destinoIngresado,
+    origenCoordenadas,
+    destinoCoordenadas,
     usuario,
   } = route.params;
 
-  const abrirAplicacionDeViaje = () => {
+  const [estadoVerificacion, setEstadoVerificacion] = useState('Verificando viaje guardado...');
+  const [estadoApertura, setEstadoApertura] = useState('');
+
+  useEffect(() => {
+    let activo = true;
+    if (!viaje?.idViaje) {
+      setEstadoVerificacion('No se recibio el identificador del viaje');
+      return undefined;
+    }
+
+    apiFetch(`/viaje/${viaje.idViaje}/verificar`)
+      .then((respuesta) => {
+        if (activo && respuesta.verificado) {
+          setEstadoVerificacion(`Viaje verificado · ID ${viaje.idViaje}`);
+        }
+      })
+      .catch((error) => {
+        if (activo) setEstadoVerificacion(error.message || 'No se pudo verificar el viaje');
+      });
+
+    return () => { activo = false; };
+  }, [viaje?.idViaje]);
+
+  const abrirConFallback = async (urlAplicacion, urlFallback) => {
+    try {
+      await Linking.openURL(urlAplicacion);
+    } catch (error) {
+      try {
+        await Linking.openURL(urlFallback);
+      } catch (fallbackError) {
+        setEstadoApertura('No se pudo abrir la aplicacion en este dispositivo');
+      }
+    }
+  };
+
+  const copiarDestinoYAbrir = async (urlAplicacion, urlFallback) => {
+    await Clipboard.setStringAsync(destinoIngresado || '');
+    setEstadoApertura('Destino copiado. Pegalo en el campo de destino.');
+    Alert.alert(
+      'Destino copiado',
+      `Al abrir ${empresaElegida}, mantené presionado el campo de destino y elegí Pegar.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: `Abrir ${empresaElegida}`,
+          onPress: () => abrirConFallback(urlAplicacion, urlFallback),
+        },
+      ]
+    );
+  };
+
+  const abrirAplicacionDeViaje = async () => {
+    setEstadoApertura(`Abriendo ${empresaElegida}...`);
+
     if (empresaElegida === 'Uber') {
-      Linking.openURL('https://m.uber.com/ul/');
+      const params = new URLSearchParams({
+        action: 'setPickup',
+        'pickup[formatted_address]': origenIngresado || '',
+        'dropoff[formatted_address]': destinoIngresado || '',
+      });
+      if (Array.isArray(origenCoordenadas)) {
+        params.set('pickup[longitude]', String(origenCoordenadas[0]));
+        params.set('pickup[latitude]', String(origenCoordenadas[1]));
+      }
+      if (Array.isArray(destinoCoordenadas)) {
+        params.set('dropoff[longitude]', String(destinoCoordenadas[0]));
+        params.set('dropoff[latitude]', String(destinoCoordenadas[1]));
+      }
+      await abrirConFallback(
+        `https://m.uber.com/ul/?${params.toString()}`,
+        'https://play.google.com/store/apps/details?id=com.ubercab'
+      );
       return;
     }
 
     if (empresaElegida === 'Cabify') {
-      Linking.openURL('https://cabify.com/');
+      const tiendaCabify = 'https://play.google.com/store/apps/details?id=com.cabify.rider';
+      const enlaceCabify = Platform.OS === 'android'
+        ? `intent://#Intent;scheme=cabify;package=com.cabify.rider;S.browser_fallback_url=${encodeURIComponent(tiendaCabify)};end`
+        : 'cabify://';
+      await copiarDestinoYAbrir(enlaceCabify, tiendaCabify);
       return;
     }
 
     if (empresaElegida === 'Didi' || empresaElegida === 'DiDi') {
-      Linking.openURL('https://web.didiglobal.com/');
+      const tiendaDidi = 'https://play.google.com/store/apps/details?id=com.didiglobal.passenger';
+      const enlaceDidi = Platform.OS === 'android'
+        ? `intent:#Intent;component=com.didiglobal.passenger/com.didi.sdk.app.DidiLoadDexActivity;S.browser_fallback_url=${encodeURIComponent(tiendaDidi)};end`
+        : 'didi://';
+      await copiarDestinoYAbrir(enlaceDidi, tiendaDidi);
       return;
     }
   };
@@ -51,7 +138,7 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
         <View style={estilos.header}>
           <TouchableOpacity
             style={estilos.botonCircular}
-            onPress={() => navigation.navigate('Resultados', { usuario })}
+            onPress={() => navigation.goBack()}
           >
             <Text style={estilos.flecha}>←</Text>
           </TouchableOpacity>
@@ -80,9 +167,9 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
         </View>
 
         <View style={estilos.rutaCard}>
-          <Stop label="Origen" value="Ubicación seleccionada" tipo="origen" />
+          <Stop label="Origen" value={origenIngresado || 'Ubicacion seleccionada'} tipo="origen" />
           <View style={estilos.lineaStop} />
-          <Stop label="Destino" value="Destino seleccionado" tipo="destino" />
+          <Stop label="Destino" value={destinoIngresado || 'Destino seleccionado'} tipo="destino" />
         </View>
 
         <View style={estilos.resumenCard}>
@@ -103,7 +190,7 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
             </Text>
 
             <Text style={estilos.detalleTexto}>
-              ⭐ 4,92 · 3 min · 12 min de viaje
+              {ofertaElegida?.llegadaMin || 3} min de llegada · {ofertaElegida?.duracionMin || viaje?.tiempoEstimado} min de viaje
             </Text>
           </View>
 
@@ -135,6 +222,14 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
           </Text>
         </View>
 
+        <View style={estilos.verificacionCard}>
+          <Text style={estilos.verificacionIcono}>✓</Text>
+          <View style={estilos.verificacionTextoBox}>
+            <Text style={estilos.verificacionTitulo}>Registro del viaje</Text>
+            <Text style={estilos.verificacionDetalle}>{estadoVerificacion}</Text>
+          </View>
+        </View>
+
         <TouchableOpacity
           onPress={abrirAplicacionDeViaje}
           activeOpacity={0.85}
@@ -151,6 +246,10 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
             </Text>
           </LinearGradient>
         </TouchableOpacity>
+
+        {estadoApertura !== '' && (
+          <Text style={estilos.estadoApertura}>{estadoApertura}</Text>
+        )}
 
         <TouchableOpacity
           style={estilos.botonSecundario}
@@ -509,6 +608,33 @@ const estilos = StyleSheet.create({
     fontSize: 12,
   },
 
+  verificacionCard: {
+    marginTop: 14,
+    borderRadius: 18,
+    backgroundColor: 'rgba(34,197,94,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(34,197,94,0.35)',
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  verificacionIcono: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    color: '#FFFFFF',
+    backgroundColor: '#22C55E',
+    textAlign: 'center',
+    lineHeight: 30,
+    fontWeight: '900',
+    marginRight: 10,
+  },
+
+  verificacionTextoBox: { flex: 1 },
+  verificacionTitulo: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
+  verificacionDetalle: { color: '#86EFAC', fontSize: 11, marginTop: 3 },
+
   ctaWrapper: {
     marginTop: 24,
   },
@@ -524,6 +650,13 @@ const estilos = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '900',
+  },
+
+  estadoApertura: {
+    color: '#94A3B8',
+    textAlign: 'center',
+    fontSize: 11,
+    marginTop: 8,
   },
 
   botonSecundario: {

@@ -4,6 +4,7 @@ const {
   obtenerViajes,
   obtenerViajesPorUsuario,
   obtenerStatsViajes,
+  verificarViaje,
 } = require('../controllers/viajeController');
 const { requireAuth } = require('../middlewares/authMiddleware');
 
@@ -14,5 +15,6 @@ router.get('/viajes', requireAuth, obtenerViajes);
 router.get('/mis-viajes', requireAuth, obtenerViajesPorUsuario);
 router.get('/mis-viajes/stats', requireAuth, obtenerStatsViajes);
 router.get('/viajes/usuario/:idUsuario', requireAuth, obtenerViajesPorUsuario);
+router.get('/viaje/:idViaje/verificar', requireAuth, verificarViaje);
 
 module.exports = router;

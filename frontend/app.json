@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "front",
-    "slug": "front",
+    "name": "ViajaYa",
+    "slug": "viajaya044",
     "scheme": [
       "viajaya",
       "com.viajaya.app"
@@ -17,7 +17,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.viajaya.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.viajaya.app",
@@ -38,6 +42,12 @@
           "iosUrlScheme": "com.googleusercontent.apps.571048823354-t37adolficj1upalbpas7hadaasgdtpt"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "303a831d-6996-4e0b-8441-81a057fe38a9"
+      }
+    },
+    "owner": "viajaya044"
   }
 }

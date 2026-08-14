@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const authRoutes = require('./routes/authRoutes');
 const viajeRoutes = require('./routes/viajeRoutes');
@@ -17,6 +18,19 @@ app.get('/', (req, res) => {
 
 app.get('/health', (req, res) => {
   res.json({ estado: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/descargar-apk', (req, res) => {
+  const apkPath = path.resolve(
+    __dirname,
+    '../../frontend/android/app/build/outputs/apk/release/app-release.apk'
+  );
+
+  res.download(apkPath, 'ViajaYa.apk', (error) => {
+    if (error && !res.headersSent) {
+      res.status(404).json({ mensaje: 'La APK todavia no esta disponible.' });
+    }
+  });
 });
 
 app.use('/', authRoutes);

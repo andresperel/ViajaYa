@@ -25,6 +25,7 @@ try {
   googleNativo = require('@react-native-google-signin/google-signin');
   googleNativo.GoogleSignin.configure({
     webClientId: GOOGLE_CONFIG.webClientId,
+    iosClientId: GOOGLE_CONFIG.iosClientId,
     offlineAccess: false,
   });
 } catch (error) {
@@ -51,12 +52,19 @@ export default function LoginScreen({ navigation }) {
       return;
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+
     try {
       setMensajeEnPantalla('Ingresando...');
 
       const respuestaDelServidor = await fetch(`${API_URL}/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': '1',
+        },
+        signal: controller.signal,
         body: JSON.stringify({
           email: correoIngresado.trim().toLowerCase(),
           password: passwordIngresada.trim(),
@@ -71,8 +79,14 @@ export default function LoginScreen({ navigation }) {
         setMensajeEnPantalla(datosRecibidos.mensaje || 'No pude iniciar sesion');
       }
     } catch (error) {
-      setMensajeEnPantalla('No pude conectarme con el servidor');
+      setMensajeEnPantalla(
+        error.name === 'AbortError'
+          ? 'El servidor demoro demasiado. Intenta nuevamente.'
+          : 'No pude conectarme con el servidor'
+      );
       console.log('Error al iniciar sesion:', error);
+    } finally {
+      clearTimeout(timeout);
     }
   };
 

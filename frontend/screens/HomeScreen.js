@@ -113,6 +113,10 @@ export default function HomeScreen({ navigation, route }) {
   const manejarBusquedaViaje = async () => {
     setMensajeEnPantalla('');
 
+    // No dejamos solicitudes del autocompletado compitiendo con el calculo.
+    cancelarBusqueda('origen');
+    cancelarBusqueda('destino');
+
     if (!usuario) {
       setMensajeEnPantalla('Volve a iniciar sesion para continuar');
       return;
@@ -123,12 +127,16 @@ export default function HomeScreen({ navigation, route }) {
       return;
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20_000);
+
     try {
       setMensajeEnPantalla('Calculando viaje...');
 
       const respuestaDelServidor = await fetch(`${API_URL}/calcular-viaje`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           origen: origenIngresado,
           destino: destinoIngresado,
@@ -150,8 +158,14 @@ export default function HomeScreen({ navigation, route }) {
         setMensajeEnPantalla(datosRecibidos.mensaje || 'No pude calcular el viaje');
       }
     } catch (error) {
-      setMensajeEnPantalla('No pude conectarme con el servidor');
+      setMensajeEnPantalla(
+        error.name === 'AbortError'
+          ? 'El calculo demoro demasiado. Intenta nuevamente.'
+          : 'No pude conectarme con el servidor'
+      );
       console.log('Error al calcular viaje:', error);
+    } finally {
+      clearTimeout(timeout);
     }
   };
 

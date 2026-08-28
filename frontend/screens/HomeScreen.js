@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_URL } from '../services/api';
+import { useApp } from '../context/AppContext';
 
 import {
   SafeAreaView,
@@ -14,6 +15,8 @@ import {
 
 export default function HomeScreen({ navigation, route }) {
   const usuario = route?.params?.usuario;
+  const { idioma, notificaciones } = useApp();
+  const ingles = idioma === 'en';
 
   const [origenIngresado, setOrigenIngresado] = useState('');
   const [destinoIngresado, setDestinoIngresado] = useState('');
@@ -23,8 +26,7 @@ export default function HomeScreen({ navigation, route }) {
   const [sugerenciasDestino, setSugerenciasDestino] = useState([]);
   const [campoActivo, setCampoActivo] = useState(null);
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
-  const notificaciones = route?.params?.notificaciones || [];
-  const tieneNotificaciones = notificaciones.length > 0;
+  const tieneNotificaciones = notificaciones.some((item) => !item.leida);
   const busquedasPendientes = useRef({ origen: {}, destino: {} });
 
   const cancelarBusqueda = (tipo) => {
@@ -170,7 +172,7 @@ export default function HomeScreen({ navigation, route }) {
   };
 
   const tocarCampana = () => {
-    navigation.navigate('Notificaciones', { usuario, notificaciones });
+    navigation.navigate('Notificaciones', { usuario });
   };
 
   return (
@@ -194,7 +196,7 @@ export default function HomeScreen({ navigation, route }) {
             </LinearGradient>
 
             <View>
-              <Text style={estilos.saludoChico}>Buenas tardes</Text>
+              <Text style={estilos.saludoChico}>{ingles ? 'Hello' : 'Buenas tardes'}</Text>
               <Text style={estilos.nombreUsuario}>
                 {usuario?.nombre || 'Usuario'}
               </Text>
@@ -208,8 +210,8 @@ export default function HomeScreen({ navigation, route }) {
         </View>
 
         <View style={estilos.hero}>
-          <Text style={estilos.titulo}>¿A donde vamos?</Text>
-          <Text style={estilos.subtitulo}>Compara en segundos. Paga menos.</Text>
+          <Text style={estilos.titulo}>{ingles ? 'Where are we going?' : '¿A dónde vamos?'}</Text>
+          <Text style={estilos.subtitulo}>{ingles ? 'Compare in seconds. Pay less.' : 'Compará en segundos. Pagá menos.'}</Text>
         </View>
 
         <View style={estilos.cardBusqueda}>
@@ -233,7 +235,7 @@ export default function HomeScreen({ navigation, route }) {
 
               {campoActivo === 'origen' && sugerenciasOrigen.length > 0 && (
                 <View style={estilos.sugerenciasBox}>
-                  {sugerenciasOrigen.slice(0, 4).map((sugerencia, index) => (
+                  {sugerenciasOrigen.slice(0, 8).map((sugerencia, index) => (
                     <TouchableOpacity
                       key={`${sugerencia.label}-${index}`}
                       style={estilos.sugerenciaItem}
@@ -264,7 +266,7 @@ export default function HomeScreen({ navigation, route }) {
 
               {campoActivo === 'destino' && sugerenciasDestino.length > 0 && (
                 <View style={estilos.sugerenciasBox}>
-                  {sugerenciasDestino.slice(0, 4).map((sugerencia, index) => (
+                  {sugerenciasDestino.slice(0, 8).map((sugerencia, index) => (
                     <TouchableOpacity
                       key={`${sugerencia.label}-${index}`}
                       style={estilos.sugerenciaItem}

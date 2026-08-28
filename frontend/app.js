@@ -18,6 +18,10 @@ import ViajeConfirmadoScreen from './screens/ViajeConfirmadoScreen';
 import MisViajesScreen from './screens/MisViajesScreen';
 import PerfilScreen from './screens/PerfilScreen';
 import NotificacionesScreen from './screens/NotificacionesScreen';
+import IdiomaScreen from './screens/IdiomaScreen';
+import AyudaScreen from './screens/AyudaScreen';
+import PrivacidadScreen from './screens/PrivacidadScreen';
+import { AppProvider } from './context/AppContext';
 
 // Creo el Stack Navigator para manejar las pantallas.
 const Stack = createNativeStackNavigator();
@@ -25,6 +29,7 @@ const Stack = createNativeStackNavigator();
 // Este es el componente principal de la app.
 export default function App() {
   return (
+    <AppProvider>
     <NavigationContainer>
 
       <Stack.Navigator
@@ -92,8 +97,13 @@ export default function App() {
           component={NotificacionesScreen}
         />
 
+        <Stack.Screen name="Idioma" component={IdiomaScreen} />
+        <Stack.Screen name="Ayuda" component={AyudaScreen} />
+        <Stack.Screen name="Privacidad" component={PrivacidadScreen} />
+
       </Stack.Navigator>
 
     </NavigationContainer>
+    </AppProvider>
   );
 }

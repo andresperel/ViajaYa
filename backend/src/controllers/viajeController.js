@@ -22,22 +22,32 @@ async function guardarViaje(req, res) {
     return res.status(400).json({ mensaje: 'Faltan datos para guardar el viaje.' });
   }
 
-  const { data: viaje, error } = await supabase
+  const datosViaje = {
+    idViaje: Date.now(),
+    calleOrigen,
+    alturaOrigen: 0,
+    calleDestino,
+    alturaDestino: 0,
+    precioEstimado: precioNumero,
+    tiempoEstimado: tiempoNumero,
+    fechaViaje: new Date().toISOString().split('T')[0],
+    estado: 'pendiente',
+    fechaConfirmacion: null,
+    idUsuario: req.auth.userId,
+    idTipoServicio: idTipoServicioNumero,
+  };
+  let { data: viaje, error } = await supabase
     .from('Viaje')
-    .insert([{
-      idViaje: Date.now(),
-      calleOrigen,
-      alturaOrigen: 0,
-      calleDestino,
-      alturaDestino: 0,
-      precioEstimado: precioNumero,
-      tiempoEstimado: tiempoNumero,
-      fechaViaje: new Date().toISOString().split('T')[0],
-      idUsuario: req.auth.userId,
-      idTipoServicio: idTipoServicioNumero,
-    }])
+    .insert([datosViaje])
     .select()
     .single();
+
+  // Mantiene el alta operativa mientras se aplica la migracion de estados.
+  if (error && /estado|fechaConfirmacion/i.test(error.message) && /does not exist|schema cache/i.test(error.message)) {
+    delete datosViaje.estado;
+    delete datosViaje.fechaConfirmacion;
+    ({ data: viaje, error } = await supabase.from('Viaje').insert([datosViaje]).select().single());
+  }
 
   if (error) {
     console.error('Error al guardar viaje:', error);
@@ -75,7 +85,8 @@ async function obtenerStatsViajes(req, res) {
   const { data: viajes, error } = await supabase
     .from('Viaje')
     .select('precioEstimado')
-    .eq('idUsuario', req.auth.userId);
+    .eq('idUsuario', req.auth.userId)
+    .eq('estado', 'realizado');
 
   if (error) {
     console.error('Error al obtener stats:', error);
@@ -112,4 +123,32 @@ async function verificarViaje(req, res) {
   return res.status(200).json({ verificado: true, viaje });
 }
 
-module.exports = { guardarViaje, obtenerViajes, obtenerViajesPorUsuario, obtenerStatsViajes, verificarViaje };
+async function actualizarEstadoViaje(req, res) {
+  const idViaje = Number(req.params.idViaje);
+  const estado = typeof req.body?.estado === 'string' ? req.body.estado.toLowerCase() : '';
+  if (!Number.isSafeInteger(idViaje) || idViaje <= 0) {
+    return res.status(400).json({ mensaje: 'El identificador del viaje no es valido.' });
+  }
+  if (!['realizado', 'cancelado'].includes(estado)) {
+    return res.status(400).json({ mensaje: 'El estado debe ser realizado o cancelado.' });
+  }
+
+  const { data: viaje, error } = await supabase
+    .from('Viaje')
+    .update({ estado, fechaConfirmacion: new Date().toISOString() })
+    .eq('idViaje', idViaje)
+    .eq('idUsuario', req.auth.userId)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error al confirmar viaje:', error);
+    return res.status(500).json({ mensaje: 'No se pudo actualizar el viaje.' });
+  }
+  if (!viaje) {
+    return res.status(404).json({ mensaje: 'El viaje no fue encontrado.' });
+  }
+  return res.status(200).json({ mensaje: 'Estado actualizado.', viaje });
+}
+
+module.exports = { guardarViaje, obtenerViajes, obtenerViajesPorUsuario, obtenerStatsViajes, verificarViaje, actualizarEstadoViaje };

@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
-import { apiFetch } from '../services/api';
 
 import {
   SafeAreaView,
@@ -28,28 +27,7 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
     usuario,
   } = route.params;
 
-  const [estadoVerificacion, setEstadoVerificacion] = useState('Verificando viaje guardado...');
   const [estadoApertura, setEstadoApertura] = useState('');
-
-  useEffect(() => {
-    let activo = true;
-    if (!viaje?.idViaje) {
-      setEstadoVerificacion('No se recibio el identificador del viaje');
-      return undefined;
-    }
-
-    apiFetch(`/viaje/${viaje.idViaje}/verificar`)
-      .then((respuesta) => {
-        if (activo && respuesta.verificado) {
-          setEstadoVerificacion(`Viaje verificado · ID ${viaje.idViaje}`);
-        }
-      })
-      .catch((error) => {
-        if (activo) setEstadoVerificacion(error.message || 'No se pudo verificar el viaje');
-      });
-
-    return () => { activo = false; };
-  }, [viaje?.idViaje]);
 
   const abrirConFallback = async (urlAplicacion, urlFallback) => {
     try {
@@ -199,34 +177,6 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
               ${Number(precioElegido || 0).toLocaleString('es-AR')}
             </Text>
             <Text style={estilos.ars}>ARS</Text>
-          </View>
-        </View>
-
-        <View style={estilos.pagoCard}>
-          <View style={estilos.iconoPagoBox}>
-            <Text style={estilos.iconoPago}>💳</Text>
-          </View>
-
-          <View style={estilos.pagoTexto}>
-            <Text style={estilos.pagoTitulo}>Mastercard •••• 4242</Text>
-            <Text style={estilos.pagoSubtitulo}>Método de pago</Text>
-          </View>
-
-          <Text style={estilos.chevron}>›</Text>
-        </View>
-
-        <View style={estilos.seguridadCard}>
-          <Text style={estilos.escudo}>🛡️</Text>
-          <Text style={estilos.seguridadTexto}>
-            Precio estimado. Continuá en la app para finalizar el viaje.
-          </Text>
-        </View>
-
-        <View style={estilos.verificacionCard}>
-          <Text style={estilos.verificacionIcono}>✓</Text>
-          <View style={estilos.verificacionTextoBox}>
-            <Text style={estilos.verificacionTitulo}>Registro del viaje</Text>
-            <Text style={estilos.verificacionDetalle}>{estadoVerificacion}</Text>
           </View>
         </View>
 
@@ -539,101 +489,6 @@ const estilos = StyleSheet.create({
     fontSize: 10,
     marginTop: 3,
   },
-
-  pagoCard: {
-    marginTop: 14,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.045)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  iconoPagoBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 15,
-    backgroundColor: 'rgba(37,99,235,0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-
-  iconoPago: {
-    fontSize: 18,
-  },
-
-  pagoTexto: {
-    flex: 1,
-  },
-
-  pagoTitulo: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-
-  pagoSubtitulo: {
-    color: '#94A3B8',
-    fontSize: 11,
-    marginTop: 3,
-  },
-
-  chevron: {
-    color: '#94A3B8',
-    fontSize: 28,
-  },
-
-  seguridadCard: {
-    marginTop: 14,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.035)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  escudo: {
-    fontSize: 17,
-    marginRight: 10,
-  },
-
-  seguridadTexto: {
-    flex: 1,
-    color: '#94A3B8',
-    fontSize: 12,
-  },
-
-  verificacionCard: {
-    marginTop: 14,
-    borderRadius: 18,
-    backgroundColor: 'rgba(34,197,94,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.35)',
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  verificacionIcono: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    color: '#FFFFFF',
-    backgroundColor: '#22C55E',
-    textAlign: 'center',
-    lineHeight: 30,
-    fontWeight: '900',
-    marginRight: 10,
-  },
-
-  verificacionTextoBox: { flex: 1 },
-  verificacionTitulo: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
-  verificacionDetalle: { color: '#86EFAC', fontSize: 11, marginTop: 3 },
 
   ctaWrapper: {
     marginTop: 24,

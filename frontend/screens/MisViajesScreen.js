@@ -39,6 +39,10 @@ export default function MisViajesScreen({ navigation, route }) {
         ? 'Volve a iniciar sesion para ver tus viajes'
         : 'No pude conectarme con el servidor');
       console.log('Error al obtener viajes:', error);
+    } finally {
+      setMensajeEnPantalla((mensajeActual) => (
+        mensajeActual === 'Cargando viajes...' ? '' : mensajeActual
+      ));
     }
   };
 
@@ -77,10 +81,14 @@ export default function MisViajesScreen({ navigation, route }) {
         {mensajeEnPantalla !== '' && <Text style={estilos.mensaje}>{mensajeEnPantalla}</Text>}
 
         <View style={estilos.listaViajes}>
-          {viajesFiltrados.map((viaje, index) => (
+          {viajesFiltrados.slice(0, 20).map((viaje, index) => (
             <ViajeCard key={viaje.idViaje || index} viaje={viaje} />
           ))}
         </View>
+
+        {viajesFiltrados.length > 20 && (
+          <Text style={estilos.limiteTexto}>Mostrando los 20 viajes más recientes</Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -108,6 +116,7 @@ function FiltroChip({ id, label, filtroActivo, onPress }) {
 function ViajeCard({ viaje }) {
   const fecha = viaje.fechaViaje || 'Sin fecha';
   const precio = Number(viaje.precioEstimado || 0).toLocaleString('es-AR');
+  const estado = viaje.estado || 'pendiente';
 
   return (
     <View style={estilos.viajeCard}>
@@ -121,7 +130,11 @@ function ViajeCard({ viaje }) {
         <Text style={estilos.viajeMeta}>{fecha} · {viaje.tiempoEstimado} min</Text>
       </View>
 
-      <Text style={estilos.viajePrecio}>${precio}</Text>
+      <View style={estilos.viajeLateral}>
+        <Text style={estilos.viajePrecio}>${precio}</Text>
+        <Text style={[estilos.estadoBadge, estilos[`estado_${estado}`]]}>{estado}</Text>
+      </View>
+
     </View>
   );
 }
@@ -227,6 +240,7 @@ const estilos = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
   },
 
@@ -272,4 +286,10 @@ const estilos = StyleSheet.create({
     fontWeight: '900',
     marginLeft: 12,
   },
+  viajeLateral: { alignItems: 'flex-end', marginLeft: 12 },
+  estadoBadge: { marginTop: 6, fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
+  estado_pendiente: { color: '#FBBF24' },
+  estado_realizado: { color: '#22C55E' },
+  estado_cancelado: { color: '#F87171' },
+  limiteTexto: { color: '#7F8EA3', textAlign: 'center', fontSize: 11, marginTop: 8 },
 });

@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { getMyTripStats } from '../services/api';
+import { useApp } from '../context/AppContext';
 
 import {
   SafeAreaView,
@@ -13,12 +15,14 @@ import {
 
 export default function PerfilScreen({ navigation, route }) {
   const usuario = route.params?.usuario;
+  const { idioma } = useApp();
+  const ingles = idioma === 'en';
   const [cantidadViajes, setCantidadViajes] = useState(0);
   const [totalGastado, setTotalGastado] = useState(0);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     cargarStats();
-  }, []);
+  }, []));
 
   const cargarStats = async () => {
     try {
@@ -36,7 +40,7 @@ export default function PerfilScreen({ navigation, route }) {
     return (
       <SafeAreaView style={estilos.container}>
         <View style={estilos.contenido}>
-          <Text style={estilos.titulo}>Perfil</Text>
+          <Text style={estilos.titulo}>{ingles ? 'Profile' : 'Perfil'}</Text>
 
           <View style={estilos.cardPerfil}>
             <Text style={estilos.nombre}>No pude cargar los datos</Text>
@@ -74,31 +78,30 @@ export default function PerfilScreen({ navigation, route }) {
             <Text style={estilos.nombre} numberOfLines={1}>{usuario.nombre}</Text>
             <Text style={estilos.email} numberOfLines={1}>{usuario.email}</Text>
             <View style={estilos.estadoBox}>
-              <Text style={estilos.estadoTexto}>Cuenta activa</Text>
+              <Text style={estilos.estadoTexto}>{ingles ? 'Active account' : 'Cuenta activa'}</Text>
             </View>
           </View>
         </View>
 
         <View style={estilos.statsGrid}>
-          <Stat value={String(cantidadViajes)} label="Viajes" />
-          <Stat value={`$${totalGastado.toLocaleString('es-AR')}`} label="Gastado" />
-          <Stat value={cantidadViajes > 0 ? 'Activo' : 'Nuevo'} label="Estado" />
+          <Stat value={String(cantidadViajes)} label={ingles ? 'Trips' : 'Viajes'} />
+          <Stat value={`$${totalGastado.toLocaleString('es-AR')}`} label={ingles ? 'Spent' : 'Gastado'} />
+          <Stat value={cantidadViajes > 0 ? (ingles ? 'Active' : 'Activo') : (ingles ? 'New' : 'Nuevo')} label={ingles ? 'Status' : 'Estado'} />
         </View>
 
         <View style={estilos.lista}>
-          <Item icono="💳" titulo="Metodos de pago" subtitulo="Sin metodo cargado" />
-          <Item icono="🔔" titulo="Notificaciones" subtitulo="Promos y avisos" onPress={() => navigation.navigate('Notificaciones', { usuario })} />
-          <Item icono="🛡️" titulo="Privacidad y seguridad" subtitulo="Datos y permisos" />
-          <Item icono="⚙️" titulo="Preferencias" subtitulo="Idioma, moneda" />
-          <Item icono="?" titulo="Ayuda" subtitulo="Centro de ayuda y soporte" />
+          <Item icono="🔔" titulo={ingles ? 'Notifications' : 'Notificaciones'} subtitulo={ingles ? 'Offers and alerts' : 'Promos y avisos'} onPress={() => navigation.navigate('Notificaciones', { usuario })} />
+          <Item icono="🌐" titulo={ingles ? 'Language' : 'Idioma'} subtitulo={idioma === 'en' ? 'English' : 'Español'} onPress={() => navigation.navigate('Idioma')} />
+          <Item icono="🛡️" titulo={ingles ? 'Privacy and security' : 'Privacidad y seguridad'} subtitulo={ingles ? 'Data and permissions' : 'Datos y permisos'} onPress={() => navigation.navigate('Privacidad', { usuario })} />
+          <Item icono="?" titulo={ingles ? 'Help' : 'Ayuda'} subtitulo={ingles ? 'Help center and support' : 'Centro de ayuda y soporte'} onPress={() => navigation.navigate('Ayuda')} />
         </View>
 
         <TouchableOpacity style={estilos.botonSecundario} onPress={() => navigation.navigate('Home', { usuario })}>
-          <Text style={estilos.textoBotonSecundario}>Volver al inicio</Text>
+          <Text style={estilos.textoBotonSecundario}>{ingles ? 'Back to home' : 'Volver al inicio'}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={estilos.botonCerrar} onPress={() => navigation.navigate('Welcome')}>
-          <Text style={estilos.textoCerrar}>Cerrar sesion</Text>
+          <Text style={estilos.textoCerrar}>{ingles ? 'Sign out' : 'Cerrar sesion'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

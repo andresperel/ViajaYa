@@ -23,11 +23,93 @@ const nominatimHttp = axios.create({
   timeout: ORS_TIMEOUT_MS,
   headers: { 'User-Agent': 'ViajaYa/1.0 direccion-autocomplete' },
 });
+const georefHttp = axios.create({
+  baseURL: 'https://apis.datos.gob.ar/georef/api',
+  timeout: ORS_TIMEOUT_MS,
+  headers: { 'User-Agent': 'ViajaYa/1.0 direccion-autocomplete' },
+});
 
 const inCaba = ([lon, lat]) => Number.isFinite(lon) && Number.isFinite(lat)
   && lon >= CABA_BBOX.minLon && lon <= CABA_BBOX.maxLon && lat >= CABA_BBOX.minLat && lat <= CABA_BBOX.maxLat;
 
 const normalizarDireccion = (value) => value.trim().replace(/\s+/g, ' ');
+const normalizarParaComparar = (value = '') => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9 ]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const puntuarSugerencia = (item, query) => {
+  const label = normalizarParaComparar(item.label);
+  const terms = normalizarParaComparar(query).split(' ').filter(Boolean);
+  const coincidencias = terms.filter((term) => label.includes(term)).length;
+  const empiezaIgual = label.startsWith(normalizarParaComparar(query)) ? 3 : 0;
+  const tieneAltura = /\d/.test(query) && label.includes((query.match(/\d+/) || [''])[0]) ? 2 : 0;
+  return coincidencias * 2 + empiezaIgual + tieneAltura + (Number(item.confidence) || 0);
+};
+
+const deduplicarYOrdenar = (items, query) => {
+  const vistos = new Set();
+  const terms = normalizarParaComparar(query)
+    .split(' ')
+    .filter((term) => term.length >= 3 && !/^\d+$/.test(term));
+  return items
+    .filter((item) => item?.label && inCaba(item.coordinates || []))
+    .filter((item) => {
+      const label = normalizarParaComparar(item.label);
+      return terms.length === 0 || terms.every((term) => label.includes(term));
+    })
+    .sort((a, b) => puntuarSugerencia(b, query) - puntuarSugerencia(a, query))
+    .filter((item) => {
+      const [lon, lat] = item.coordinates;
+      const key = `${normalizarParaComparar(item.label)}:${lon.toFixed(4)},${lat.toFixed(4)}`;
+      if (vistos.has(key)) return false;
+      vistos.add(key);
+      return true;
+    })
+    .slice(0, 12);
+};
+
+async function buscarEnOpenStreetMap(query) {
+  const { data } = await nominatimHttp.get('/search', {
+    params: {
+      q: `${query}, Ciudad Autonoma de Buenos Aires, Argentina`,
+      format: 'jsonv2',
+      addressdetails: 1,
+      namedetails: 1,
+      limit: 15,
+      countrycodes: 'ar',
+      viewbox: `${CABA_BBOX.minLon},${CABA_BBOX.maxLat},${CABA_BBOX.maxLon},${CABA_BBOX.minLat}`,
+      bounded: 1,
+      'accept-language': 'es',
+    },
+  });
+  return (data || []).map((item) => ({
+    label: item.display_name,
+    coordinates: [Number(item.lon), Number(item.lat)],
+    confidence: Number(item.importance) || 0,
+    provider: 'openstreetmap',
+  }));
+}
+
+async function buscarEnGeoref(query) {
+  // GeoRef es la fuente oficial argentina y resulta especialmente precisa
+  // cuando el usuario ya escribio calle y altura.
+  if (!/\d/.test(query)) return [];
+  const { data } = await georefHttp.get('/direcciones', {
+    params: { direccion: query, provincia: '02', max: 10 },
+  });
+  return (data.direcciones || [])
+    .filter((item) => Number.isFinite(item.ubicacion?.lon) && Number.isFinite(item.ubicacion?.lat))
+    .map((item) => ({
+      label: item.nomenclatura,
+      coordinates: [item.ubicacion.lon, item.ubicacion.lat],
+      confidence: 1,
+      provider: 'georef-argentina',
+    }));
+}
 
 async function geocodificarEnCaba(direccion, apiKey) {
   const query = normalizarDireccion(direccion).toLowerCase();
@@ -92,54 +174,30 @@ async function buscarSugerencias(req, res) {
       layers: 'address,venue',
       size: 20,
     };
-    const autocomplete = await orsHttp.get('/geocode/autocomplete', { params });
-    const seen = new Set();
-    let sugerencias = (autocomplete.data.features || [])
-      .filter((feature) => inCaba(feature.geometry?.coordinates || []))
-      .map((feature) => ({
+    const [orsResult, osmResult, georefResult] = await Promise.allSettled([
+      orsHttp.get('/geocode/autocomplete', { params }),
+      buscarEnOpenStreetMap(query),
+      buscarEnGeoref(query),
+    ]);
+
+    const sugerenciasOrs = orsResult.status === 'fulfilled'
+      ? (orsResult.value.data.features || []).map((feature) => ({
         label: feature.properties?.label,
-        coordinates: feature.geometry.coordinates,
+        coordinates: feature.geometry?.coordinates,
         confidence: feature.properties?.confidence ?? null,
+        provider: 'openrouteservice',
       }))
-      .filter((item) => item.label)
-      .filter((item) => {
-        const key = `${item.label}-${item.coordinates.join(',')}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
+      : [];
+    const sugerenciasOsm = osmResult.status === 'fulfilled' ? osmResult.value : [];
+    const sugerenciasGeoref = georefResult.status === 'fulfilled' ? georefResult.value : [];
+    const sugerencias = deduplicarYOrdenar(
+      [...sugerenciasGeoref, ...sugerenciasOrs, ...sugerenciasOsm],
+      query,
+    );
 
-    if (sugerencias.length === 0) {
-      const { data: osm } = await nominatimHttp.get('/search', {
-        params: {
-          q: `${query}, Buenos Aires, Argentina`,
-          format: 'jsonv2',
-          addressdetails: 1,
-          limit: 8,
-          countrycodes: 'ar',
-          viewbox: `${CABA_BBOX.minLon},${CABA_BBOX.maxLat},${CABA_BBOX.maxLon},${CABA_BBOX.minLat}`,
-          bounded: 1,
-        },
-      });
+    if (sugerencias.length === 0) throw new Error('NO_AUTOCOMPLETE_RESULTS');
 
-      const sugerenciasOsm = (osm || [])
-        .map((item) => ({
-          label: item.display_name,
-          coordinates: [Number(item.lon), Number(item.lat)],
-          confidence: Number(item.importance) || null,
-        }))
-        .filter((item) => item.label && inCaba(item.coordinates))
-        .filter((item) => {
-          const key = `${item.label}-${item.coordinates.join(',')}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-
-      sugerencias = [...sugerencias, ...sugerenciasOsm];
-    }
-
-    const resultado = { sugerencias, proveedor: 'openrouteservice' };
+    const resultado = { sugerencias, proveedor: 'combinado' };
     cache.set(cacheKey, { value: resultado, expiresAt: Date.now() + 5 * 60 * 1000 });
     return res.json(resultado);
   } catch (error) {

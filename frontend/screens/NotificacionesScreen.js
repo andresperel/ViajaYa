@@ -1,4 +1,6 @@
 import React from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useApp } from '../context/AppContext';
 
 import {
   SafeAreaView,
@@ -10,19 +12,24 @@ import {
 
 export default function NotificacionesScreen({ navigation, route }) {
   const usuario = route?.params?.usuario;
-  const notificaciones = route?.params?.notificaciones || [];
+  const { idioma, notificaciones, marcarNotificacionesLeidas } = useApp();
+  const ingles = idioma === 'en';
+  useFocusEffect(React.useCallback(() => {
+    const timer = setTimeout(marcarNotificacionesLeidas, 600);
+    return () => clearTimeout(timer);
+  }, [marcarNotificacionesLeidas]));
 
   return (
     <SafeAreaView style={estilos.container}>
       <View style={estilos.contenido}>
         <View style={estilos.header}>
-          <TouchableOpacity style={estilos.botonVolver} onPress={() => navigation.navigate('Home', { usuario, notificaciones })}>
+          <TouchableOpacity style={estilos.botonVolver} onPress={() => navigation.navigate('Home', { usuario })}>
             <Text style={estilos.flecha}>←</Text>
           </TouchableOpacity>
 
           <View>
-            <Text style={estilos.titulo}>Notificaciones</Text>
-            <Text style={estilos.subtitulo}>Avisos, promociones y estado de tus viajes</Text>
+            <Text style={estilos.titulo}>{ingles ? 'Notifications' : 'Notificaciones'}</Text>
+            <Text style={estilos.subtitulo}>{ingles ? 'Alerts, offers and trip updates' : 'Avisos, promociones y estado de tus viajes'}</Text>
           </View>
         </View>
 

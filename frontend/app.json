@@ -41,7 +41,8 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.571048823354-t37adolficj1upalbpas7hadaasgdtpt"
         }
-      ]
+      ],
+      "expo-status-bar"
     ],
     "extra": {
       "eas": {

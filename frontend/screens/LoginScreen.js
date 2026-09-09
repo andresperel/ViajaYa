@@ -11,7 +11,7 @@ import {
   StyleSheet,
 } from 'react-native';
 
-import { API_URL, setAuthToken } from '../services/api';
+import { apiFetch, setAuthToken } from '../services/api';
 
 const GOOGLE_CONFIG = {
   expoClientId: process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID,
@@ -52,56 +52,36 @@ export default function LoginScreen({ navigation }) {
       return;
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
 
     try {
       setMensajeEnPantalla('Ingresando...');
 
-      const respuestaDelServidor = await fetch(`${API_URL}/login`, {
+      const datosRecibidos = await apiFetch('/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': '1',
         },
-        signal: controller.signal,
         body: JSON.stringify({
           email: correoIngresado.trim().toLowerCase(),
           password: passwordIngresada.trim(),
         }),
       });
 
-      const datosRecibidos = await respuestaDelServidor.json();
-
-      if (respuestaDelServidor.ok) {
-        navegarConSesion(datosRecibidos);
-      } else {
-        setMensajeEnPantalla(datosRecibidos.mensaje || 'No pude iniciar sesion');
-      }
+      navegarConSesion(datosRecibidos);
     } catch (error) {
-      setMensajeEnPantalla(
-        error.name === 'AbortError'
-          ? 'El servidor demoro demasiado. Intenta nuevamente.'
-          : 'No pude conectarme con el servidor'
-      );
+      setMensajeEnPantalla(error.message || 'No pude iniciar sesion');
       console.log('Error al iniciar sesion:', error);
-    } finally {
-      clearTimeout(timeout);
+
     }
   };
 
   const iniciarSesionSocialBackend = async ({ provider, email, nombre, accessToken }) => {
-    const respuestaDelServidor = await fetch(`${API_URL}/social-login`, {
+    const datosRecibidos = await apiFetch('/social-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ provider, email, nombre, accessToken }),
     });
-    const datosRecibidos = await respuestaDelServidor.json();
-
-    if (!respuestaDelServidor.ok) {
-      throw new Error(datosRecibidos.mensaje || `No pude ingresar con ${provider}`);
-    }
-
     navegarConSesion(datosRecibidos);
   };
 

@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { API_URL } from '../services/api';
+import { apiFetch } from '../services/api';
 
 export default function RegisterScreen({ navigation }) {
   const [nombreIngresado, setNombreIngresado] = useState('');
@@ -89,7 +89,7 @@ export default function RegisterScreen({ navigation }) {
     try {
       setMensajeEnPantalla('Creando cuenta...');
 
-      const respuestaDelServidor = await fetch(`${API_URL}/register`, {
+      await apiFetch('/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,32 +103,10 @@ export default function RegisterScreen({ navigation }) {
         }),
       });
 
-      const datosRecibidos = await respuestaDelServidor.json();
-
-      if (respuestaDelServidor.ok) {
-        setMensajeEnPantalla('Cuenta creada correctamente');
-
-        setTimeout(() => {
-          navigation.navigate('Login');
-        }, 1000);
-      } else {
-        const mensajeError =
-          datosRecibidos.detalle || datosRecibidos.mensaje || 'Error al registrar';
-
-        if (mensajeError.toLowerCase().includes('email')) {
-          setErrorCorreo(mensajeError);
-        } else if (mensajeError.toLowerCase().includes('nombre')) {
-          setErrorNombre(mensajeError);
-        } else if (mensajeError.toLowerCase().includes('telefono')) {
-          setErrorTelefono(mensajeError);
-        } else if (mensajeError.toLowerCase().includes('contrasena')) {
-          setErrorPassword(mensajeError);
-        } else {
-          setMensajeEnPantalla(mensajeError);
-        }
-      }
+      setMensajeEnPantalla('Cuenta creada correctamente');
+      setTimeout(() => navigation.navigate('Login'), 1000);
     } catch (error) {
-      setMensajeEnPantalla('No pude conectarme con el servidor');
+      setMensajeEnPantalla(error.message || 'No pude conectarme con el servidor');
       console.log('Error de conexion:', error);
     }
   };

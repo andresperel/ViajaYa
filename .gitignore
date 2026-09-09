@@ -1,0 +1,5 @@
+.tools/
+**/.env
+**/node_modules/
+backend/ngrok.local.yml
+*.log

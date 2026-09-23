@@ -1,119 +1,30 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Controller } from 'react-hook-form';
+import useRegistration, { registrationRules } from '../hooks/useRegistration';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import {
   SafeAreaView,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { apiFetch } from '../services/api';
 
 export default function RegisterScreen({ navigation }) {
-  const [nombreIngresado, setNombreIngresado] = useState('');
-  const [telefonoIngresado, setTelefonoIngresado] = useState('');
-  const [correoIngresado, setCorreoIngresado] = useState('');
-  const [passwordIngresada, setPasswordIngresada] = useState('');
-  const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
-  const [aceptoTerminos, setAceptoTerminos] = useState(false);
-  const [mostrarPoliticas, setMostrarPoliticas] = useState(false);
-
-  const [errorNombre, setErrorNombre] = useState('');
-  const [errorTelefono, setErrorTelefono] = useState('');
-  const [errorCorreo, setErrorCorreo] = useState('');
-  const [errorPassword, setErrorPassword] = useState('');
-
-  const limpiarErrores = () => {
-    setMensajeEnPantalla('');
-    setErrorNombre('');
-    setErrorTelefono('');
-    setErrorCorreo('');
-    setErrorPassword('');
-  };
-
-  const manejarRegistroUsuario = async () => {
-    limpiarErrores();
-
-    const nombreLimpio = nombreIngresado.trim();
-    const telefonoLimpio = telefonoIngresado.replace(/\D/g, '');
-    const correoLimpio = correoIngresado.trim().toLowerCase();
-    const passwordLimpia = passwordIngresada.trim();
-
-    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    let hayError = false;
-
-    if (!nombreLimpio) {
-      setErrorNombre('Completa tu nombre');
-      hayError = true;
-    } else if (nombreLimpio.length < 3 || nombreLimpio.length > 50) {
-      setErrorNombre('El nombre debe tener entre 3 y 50 caracteres');
-      hayError = true;
-    }
-
-    if (!correoLimpio) {
-      setErrorCorreo('Completa tu correo electronico');
-      hayError = true;
-    } else if (!emailValido.test(correoLimpio)) {
-      setErrorCorreo('Ingresa un email valido');
-      hayError = true;
-    } else if (correoLimpio.length > 100) {
-      setErrorCorreo('El email es demasiado largo');
-      hayError = true;
-    }
-
-    if (!telefonoLimpio) {
-      setErrorTelefono('Completa tu telefono');
-      hayError = true;
-    } else if (!/^\d{8,15}$/.test(telefonoLimpio)) {
-      setErrorTelefono('El telefono debe tener entre 8 y 15 numeros');
-      hayError = true;
-    }
-
-    if (!passwordLimpia) {
-      setErrorPassword('Completa tu contrasena');
-      hayError = true;
-    } else if (passwordLimpia.length < 6 || passwordLimpia.length > 30) {
-      setErrorPassword('La contrasena debe tener entre 6 y 30 caracteres');
-      hayError = true;
-    }
-
-    if (!aceptoTerminos) {
-      setMensajeEnPantalla('Acepta los terminos para crear tu cuenta');
-      hayError = true;
-    }
-
-    if (hayError) return;
-
-    try {
-      setMensajeEnPantalla('Creando cuenta...');
-
-      await apiFetch('/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': '1',
-        },
-        body: JSON.stringify({
-          nombre: nombreLimpio,
-          telefono: telefonoLimpio,
-          email: correoLimpio,
-          password: passwordLimpia,
-        }),
-      });
-
-      setMensajeEnPantalla('Cuenta creada correctamente');
-      setTimeout(() => navigation.navigate('Login'), 1000);
-    } catch (error) {
-      setMensajeEnPantalla(error.message || 'No pude conectarme con el servidor');
-      console.log('Error de conexion:', error);
-    }
-  };
+  const {
+    control, enviar, mostrarPoliticas, setMostrarPoliticas,
+    formState: { errors, isSubmitting },
+  } = useRegistration(navigation);
 
   return (
     <SafeAreaView style={estilos.container}>
-      <View style={estilos.contenido}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={estilos.contenido} keyboardShouldPersistTaps="handled">
         <TouchableOpacity
           style={estilos.botonVolver}
           onPress={() => navigation.navigate('Welcome')}
@@ -127,63 +38,29 @@ export default function RegisterScreen({ navigation }) {
         </View>
 
         <View style={estilos.formulario}>
-          <Campo
-            icono="👤"
-            label="Nombre completo"
-            placeholder="Maria Gonzalez"
-            value={nombreIngresado}
-            onChangeText={(texto) => {
-              setNombreIngresado(texto);
-              setErrorNombre('');
-            }}
-            error={errorNombre}
-          />
+          <Campo control={control} name="nombre" error={errors.nombre?.message}
+            editable={!isSubmitting} icono="👤" label="Nombre completo" placeholder="Maria Gonzalez" autoCapitalize="words" />
+          <Campo control={control} name="email" error={errors.email?.message}
+            editable={!isSubmitting} icono="✉️" label="Correo electrónico" placeholder="maria@ejemplo.com"
+            keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+          <Campo control={control} name="telefono" error={errors.telefono?.message}
+            editable={!isSubmitting} icono="📱" label="Teléfono" placeholder="+54 11 0000 0000" keyboardType="phone-pad" />
+          <Campo control={control} name="password" error={errors.password?.message}
+            editable={!isSubmitting} icono="🔒" label="Contraseña" placeholder="Mínimo 8 caracteres"
+            secureTextEntry autoCapitalize="none" autoCorrect={false} />
 
-          <Campo
-            icono="✉️"
-            label="Correo electronico"
-            placeholder="maria@ejemplo.com"
-            value={correoIngresado}
-            onChangeText={(texto) => {
-              setCorreoIngresado(texto);
-              setErrorCorreo('');
-            }}
-            error={errorCorreo}
-            autoCapitalize="none"
-          />
-
-          <Campo
-            icono="📱"
-            label="Telefono"
-            placeholder="+54 11 0000 0000"
-            value={telefonoIngresado}
-            onChangeText={(texto) => {
-              setTelefonoIngresado(texto);
-              setErrorTelefono('');
-            }}
-            error={errorTelefono}
-            keyboardType="phone-pad"
-          />
-
-          <Campo
-            icono="🔒"
-            label="Contrasena"
-            placeholder="Minimo 6 caracteres"
-            value={passwordIngresada}
-            onChangeText={(texto) => {
-              setPasswordIngresada(texto);
-              setErrorPassword('');
-            }}
-            error={errorPassword}
-            secureTextEntry
-          />
-
+          <Controller control={control} name="terminos" rules={registrationRules.terminos}
+            render={({ field: { value, onChange, onBlur } }) => (
           <TouchableOpacity
             style={estilos.terminosBox}
             activeOpacity={0.85}
-            onPress={() => setAceptoTerminos((valorActual) => !valorActual)}
+            disabled={isSubmitting}
+            accessibilityRole="checkbox"
+            accessibilityLabel="Acepto los términos y condiciones y la política de privacidad"
+            accessibilityState={{ checked: value, disabled: isSubmitting }}
+            onPress={() => { onChange(!value); onBlur(); }}
           >
-            {aceptoTerminos ? (
+            {value ? (
               <LinearGradient
                 colors={['#2563EB', '#22C55E']}
                 start={{ x: 0, y: 0 }}
@@ -201,6 +78,9 @@ export default function RegisterScreen({ navigation }) {
               <Text style={estilos.terminosBlanco}>politica de privacidad</Text>.
             </Text>
           </TouchableOpacity>
+
+            )} />
+          {errors.terminos && <Text accessibilityRole="alert" style={estilos.errorTexto}>{errors.terminos.message}</Text>}
 
           <TouchableOpacity
             activeOpacity={0.8}
@@ -221,18 +101,18 @@ export default function RegisterScreen({ navigation }) {
             </View>
           )}
 
-          <TouchableOpacity onPress={manejarRegistroUsuario} activeOpacity={0.85}>
+          <TouchableOpacity onPress={enviar} disabled={isSubmitting} accessibilityState={{ disabled: isSubmitting, busy: isSubmitting }} activeOpacity={0.85}>
             <LinearGradient
               colors={['#2563EB', '#22C55E']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={estilos.botonPrincipal}
             >
-              <Text style={estilos.textoBotonPrincipal}>Crear cuenta</Text>
+              <Text style={estilos.textoBotonPrincipal}>{isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}</Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          <Text style={estilos.mensaje}>{mensajeEnPantalla}</Text>
+          {errors.root?.server && <Text accessibilityRole="alert" style={[estilos.mensaje, estilos.errorTexto]}>{errors.root.server.message}</Text>}
         </View>
 
         <TouchableOpacity
@@ -243,12 +123,15 @@ export default function RegisterScreen({ navigation }) {
             ¿Ya tenes cuenta? <Text style={estilos.loginLink}>Iniciar sesion</Text>
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 function Campo({
+  control,
+  name,
   icono,
   label,
   error,
@@ -258,17 +141,17 @@ function Campo({
     <View style={estilos.campoBox}>
       <Text style={estilos.label}>{label}</Text>
 
-      <View style={[estilos.inputBox, error !== '' && estilos.inputBoxError]}>
+      <View style={[estilos.inputBox, !!error && estilos.inputBoxError]}>
         <Text style={estilos.inputIcono}>{icono}</Text>
-        <TextInput
-          {...props}
-          style={estilos.input}
-          placeholderTextColor="#7F8EA3"
-        />
+        <Controller control={control} name={name} rules={registrationRules[name]}
+          render={({ field: { value, onChange, onBlur, ref } }) => (
+            <TextInput {...props} ref={ref} value={value} onChangeText={onChange} onBlur={onBlur}
+              accessibilityLabel={label} style={estilos.input} placeholderTextColor="#7F8EA3" />
+          )} />
       </View>
 
-      {error !== '' && (
-        <Text style={estilos.errorTexto}>{error}</Text>
+      {!!error && (
+        <Text accessibilityRole="alert" style={estilos.errorTexto}>{error}</Text>
       )}
     </View>
   );
@@ -281,7 +164,7 @@ const estilos = StyleSheet.create({
   },
 
   contenido: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 18,
     paddingBottom: 28,

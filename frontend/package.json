@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "test:registration": "node --test tests/registration.test.cjs",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -21,6 +22,7 @@
     "expo-status-bar": "~57.0.1",
     "expo-web-browser": "~57.0.2",
     "react": "19.2.3",
+    "react-hook-form": "^7.88.0",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0"

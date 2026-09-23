@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
@@ -32,7 +32,10 @@ try {
   // Expo Go no incluye RNGoogleSignin. La APK nativa si lo registra.
 }
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen({ navigation, route }) {
+  useEffect(() => navigation.addListener('blur', () => {
+    navigation.setParams({ registroExitoso: undefined });
+  }), [navigation]);
   const [correoIngresado, setCorreoIngresado] = useState('');
   const [passwordIngresada, setPasswordIngresada] = useState('');
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
@@ -156,6 +159,12 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <SafeAreaView style={estilos.container}>
+      {route.params?.registroExitoso && (
+        <Text accessibilityRole="alert" style={{ color: '#22C55E', textAlign: 'center', padding: 12 }}>
+          {route.params.registroExitoso.nombre}, tu cuenta fue creada correctamente.
+          Ya podés iniciar sesión con {route.params.registroExitoso.email}.
+        </Text>
+      )}
       <View style={estilos.contenido}>
         <TouchableOpacity
           style={estilos.botonVolver}

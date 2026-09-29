@@ -332,7 +332,7 @@ async function resetPassword(req, res) {
 
 async function socialLogin(req, res) {
   try {
-    const { provider, email: emailBody, nombre: nombreBody, accessToken } = req.body || {};
+    const { provider, email: emailBody, nombre: nombreBody, accessToken, supabaseAccessToken } = req.body || {};
     const providerLimpio = String(provider || '').trim().toLowerCase();
 
     if (!['google', 'apple'].includes(providerLimpio)) {
@@ -343,23 +343,32 @@ async function socialLogin(req, res) {
     let nombreSocial = nombreBody;
 
     if (providerLimpio === 'google') {
-      if (typeof accessToken !== 'string' || !accessToken) {
+      if (typeof supabaseAccessToken === 'string' && supabaseAccessToken) {
+        const { data: authData, error: authError } = await supabase.auth.getUser(supabaseAccessToken);
+        if (authError || !authData.user?.email || !authData.user.email_confirmed_at) {
+          return res.status(401).json({ mensaje: 'La sesion de Google no es valida.' });
+        }
+        emailSocial = authData.user.email;
+        nombreSocial = authData.user.user_metadata?.full_name
+          || authData.user.user_metadata?.name
+          || nombreSocial;
+      } else if (typeof accessToken === 'string' && accessToken) {
+        const respuestaGoogle = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!respuestaGoogle.ok) {
+          return res.status(401).json({ mensaje: 'La sesion de Google no es valida.' });
+        }
+
+        const perfilGoogle = await respuestaGoogle.json();
+        if (!perfilGoogle.email_verified) {
+          return res.status(401).json({ mensaje: 'Google no verifico este correo.' });
+        }
+        emailSocial = perfilGoogle.email;
+        nombreSocial = perfilGoogle.name;
+      } else {
         return res.status(400).json({ mensaje: 'Falta la credencial de Google.' });
       }
-
-      const respuestaGoogle = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (!respuestaGoogle.ok) {
-        return res.status(401).json({ mensaje: 'La sesion de Google no es valida.' });
-      }
-
-      const perfilGoogle = await respuestaGoogle.json();
-      if (!perfilGoogle.email_verified) {
-        return res.status(401).json({ mensaje: 'Google no verifico este correo.' });
-      }
-      emailSocial = perfilGoogle.email;
-      nombreSocial = perfilGoogle.name;
     }
 
     if (typeof emailSocial !== 'string') {

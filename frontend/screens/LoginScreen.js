@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as QueryParams from 'expo-auth-session/build/QueryParams';
+import * as WebBrowser from 'expo-web-browser';
 
 import {
   SafeAreaView,
@@ -12,25 +14,10 @@ import {
 } from 'react-native';
 
 import { apiFetch, setAuthToken } from '../services/api';
+import { supabase } from '../services/supabase';
 
-const GOOGLE_CONFIG = {
-  expoClientId: process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID,
-  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-  androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-};
-
-let googleNativo = null;
-try {
-  googleNativo = require('@react-native-google-signin/google-signin');
-  googleNativo.GoogleSignin.configure({
-    webClientId: GOOGLE_CONFIG.webClientId,
-    iosClientId: GOOGLE_CONFIG.iosClientId,
-    offlineAccess: false,
-  });
-} catch (error) {
-  // Expo Go no incluye RNGoogleSignin. La APK nativa si lo registra.
-}
+WebBrowser.maybeCompleteAuthSession();
+const GOOGLE_REDIRECT_URL = 'viajaya://auth/callback';
 
 export default function LoginScreen({ navigation, route }) {
   useEffect(() => navigation.addListener('blur', () => {
@@ -79,42 +66,43 @@ export default function LoginScreen({ navigation, route }) {
     }
   };
 
-  const iniciarSesionSocialBackend = async ({ provider, email, nombre, accessToken }) => {
+  const iniciarSesionSocialBackend = async ({ provider, email, nombre, accessToken, supabaseAccessToken }) => {
     const datosRecibidos = await apiFetch('/social-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider, email, nombre, accessToken }),
+      body: JSON.stringify({ provider, email, nombre, accessToken, supabaseAccessToken }),
     });
     navegarConSesion(datosRecibidos);
   };
 
   const manejarGoogle = async () => {
-    if (!googleNativo?.GoogleSignin) {
-      setMensajeEnPantalla('Google requiere abrir la APK instalada, no Expo Go');
-      return;
-    }
-
-    const { GoogleSignin, isCancelledResponse } = googleNativo;
-    if (!GOOGLE_CONFIG.webClientId || !GOOGLE_CONFIG.androidClientId) {
-      setMensajeEnPantalla('Faltan las credenciales de Google');
+    if (!supabase) {
+      setMensajeEnPantalla('Falta configurar Supabase en el frontend. Reinicia Expo después de agregar las variables.');
       return;
     }
 
     try {
-      setMensajeEnPantalla('Eligiendo cuenta de Google...');
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      await GoogleSignin.signOut().catch(() => {});
-      const resultado = await GoogleSignin.signIn();
-      if (isCancelledResponse(resultado)) {
+      setMensajeEnPantalla('Conectando con Google...');
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: GOOGLE_REDIRECT_URL, skipBrowserRedirect: true },
+      });
+      if (error) throw error;
+
+      const resultado = await WebBrowser.openAuthSessionAsync(data.url, GOOGLE_REDIRECT_URL);
+      if (resultado.type !== 'success') {
         setMensajeEnPantalla('');
         return;
       }
 
-      const tokens = await GoogleSignin.getTokens();
       setMensajeEnPantalla('Validando cuenta de Google...');
+      const { params, errorCode } = QueryParams.getQueryParams(resultado.url);
+      if (errorCode) throw new Error(errorCode);
+      if (!params.access_token) throw new Error('Google no devolvió una sesión válida.');
+
       await iniciarSesionSocialBackend({
         provider: 'google',
-        accessToken: tokens.accessToken,
+        supabaseAccessToken: params.access_token,
       });
     } catch (error) {
       setMensajeEnPantalla(`No pude ingresar con Google${error.code ? ` (${error.code})` : ''}`);
@@ -244,7 +232,7 @@ export default function LoginScreen({ navigation, route }) {
             style={estilos.socialBoton}
             onPress={manejarGoogle}
           >
-            <Text style={estilos.socialTexto}>G Google</Text>
+            <Text style={estilos.socialTexto}>Continuar con Google</Text>
           </TouchableOpacity>
         </View>
 

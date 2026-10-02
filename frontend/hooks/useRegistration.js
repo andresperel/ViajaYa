@@ -1,5 +1,5 @@
 export { registrationRules } from '../validation/registration';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useForm } from 'react-hook-form';
 import { apiFetch } from '../services/api';
@@ -10,7 +10,6 @@ const limpiar = (value) => value.trim();
 export default function useRegistration(navigation) {
   const form = useForm({ defaultValues, mode: 'onTouched', reValidateMode: 'onChange' });
   const { reset, setError, clearErrors, handleSubmit } = form;
-  const [mostrarPoliticas, setMostrarPoliticas] = useState(false);
   const activeVisit = useRef(null);
   const sending = useRef(false);
 
@@ -18,7 +17,6 @@ export default function useRegistration(navigation) {
     const visit = {};
     activeVisit.current = visit;
     reset(defaultValues);
-    setMostrarPoliticas(false);
     return () => { activeVisit.current = null; };
   }, [reset]));
 
@@ -34,7 +32,7 @@ export default function useRegistration(navigation) {
       });
       if (activeVisit.current !== visit) return;
       reset(defaultValues);
-      navigation.navigate('Login', { registroExitoso: { nombre: limpiar(nombre), email: limpiar(email).toLowerCase() } });
+      navigation.navigate('Login');
     } catch (error) {
       if (activeVisit.current !== visit) return;
       setError(error.status === 409 ? 'email' : 'root.server', {
@@ -52,5 +50,5 @@ export default function useRegistration(navigation) {
     finally { sending.current = false; }
   };
 
-  return { ...form, enviar, mostrarPoliticas, setMostrarPoliticas };
+  return { ...form, enviar };
 }

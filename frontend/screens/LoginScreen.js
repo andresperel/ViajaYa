@@ -21,9 +21,6 @@ WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_REDIRECT_URL = 'viajaya://auth/callback';
 
 export default function LoginScreen({ navigation, route }) {
-  useEffect(() => navigation.addListener('blur', () => {
-    navigation.setParams({ registroExitoso: undefined });
-  }), [navigation]);
   useEffect(() => {
     if (route.params?.googleError) setMensajeEnPantalla(route.params.googleError);
   }, [route.params?.googleError]);
@@ -165,12 +162,6 @@ export default function LoginScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={estilos.container}>
-      {route.params?.registroExitoso && (
-        <Text accessibilityRole="alert" style={{ color: '#22C55E', textAlign: 'center', padding: 12 }}>
-          {route.params.registroExitoso.nombre}, tu cuenta fue creada correctamente.
-          Ya podés iniciar sesión con {route.params.registroExitoso.email}.
-        </Text>
-      )}
       <View style={estilos.contenido}>
         <TouchableOpacity
           style={estilos.botonVolver}

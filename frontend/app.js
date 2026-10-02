@@ -23,6 +23,8 @@ import NotificacionesScreen from './screens/NotificacionesScreen';
 import IdiomaScreen from './screens/IdiomaScreen';
 import AyudaScreen from './screens/AyudaScreen';
 import PrivacidadScreen from './screens/PrivacidadScreen';
+import TerminosScreen from './screens/TerminosScreen';
+import PoliticaPrivacidadScreen from './screens/PoliticaPrivacidadScreen';
 import { AppProvider } from './context/AppContext';
 import { supabase } from './services/supabase';
 import { apiFetch, setAuthToken } from './services/api';
@@ -148,6 +150,8 @@ export default function App() {
         <Stack.Screen name="Idioma" component={IdiomaScreen} />
         <Stack.Screen name="Ayuda" component={AyudaScreen} />
         <Stack.Screen name="Privacidad" component={PrivacidadScreen} />
+        <Stack.Screen name="Terminos" component={TerminosScreen} />
+        <Stack.Screen name="PoliticaPrivacidad" component={PoliticaPrivacidadScreen} />
 
       </Stack.Navigator>
 

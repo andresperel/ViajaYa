@@ -17,7 +17,7 @@ import {
 
 export default function RegisterScreen({ navigation }) {
   const {
-    control, enviar, mostrarPoliticas, setMostrarPoliticas,
+    control, enviar,
     formState: { errors, isSubmitting },
   } = useRegistration(navigation);
 
@@ -51,8 +51,8 @@ export default function RegisterScreen({ navigation }) {
 
           <Controller control={control} name="terminos" rules={registrationRules.terminos}
             render={({ field: { value, onChange, onBlur } }) => (
+          <View style={estilos.terminosBox}>
           <TouchableOpacity
-            style={estilos.terminosBox}
             activeOpacity={0.85}
             disabled={isSubmitting}
             accessibilityRole="checkbox"
@@ -72,34 +72,26 @@ export default function RegisterScreen({ navigation }) {
             ) : (
               <View style={[estilos.checkBox, estilos.checkBoxVacio]} />
             )}
-
-            <Text style={estilos.terminosTexto}>
-              Acepto los <Text style={estilos.terminosBlanco}>terminos y condiciones</Text> y la{' '}
-              <Text style={estilos.terminosBlanco}>politica de privacidad</Text>.
-            </Text>
           </TouchableOpacity>
+            <Text style={estilos.terminosTexto}>
+              Acepto los{' '}
+              <Text accessibilityRole="link" style={estilos.terminosBlanco} onPress={() => navigation.navigate('Terminos')}>términos y condiciones</Text>
+              {' '}y la{' '}
+              <Text accessibilityRole="link" style={estilos.terminosBlanco} onPress={() => navigation.navigate('PoliticaPrivacidad')}>política de privacidad</Text>.
+            </Text>
+          </View>
 
             )} />
           {errors.terminos && <Text accessibilityRole="alert" style={estilos.errorTexto}>{errors.terminos.message}</Text>}
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setMostrarPoliticas((valorActual) => !valorActual)}
-          >
-            <Text style={estilos.leerMas}>
-              {mostrarPoliticas ? 'Ocultar' : 'Leer mas'}
-            </Text>
-          </TouchableOpacity>
-
-          {mostrarPoliticas && (
-            <View style={estilos.politicasBox}>
-              <Text style={estilos.politicasTexto}>
-                ViajaYa usa tus datos para crear tu cuenta, iniciar sesion, guardar tus viajes y
-                mostrarte opciones de movilidad. No compartimos tu contrasena y podes pedir cambios
-                o eliminacion de tus datos desde soporte.
-              </Text>
-            </View>
-          )}
+          <View style={estilos.enlacesLegales}>
+            <TouchableOpacity onPress={() => navigation.navigate('Terminos')} accessibilityRole="link">
+              <Text style={estilos.leerMas}>Leer términos completos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('PoliticaPrivacidad')} accessibilityRole="link">
+              <Text style={estilos.leerMas}>Leer más sobre tus datos</Text>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity onPress={enviar} disabled={isSubmitting} accessibilityState={{ disabled: isSubmitting, busy: isSubmitting }} activeOpacity={0.85}>
             <LinearGradient
@@ -261,6 +253,13 @@ const estilos = StyleSheet.create({
     marginTop: 4,
   },
 
+  enlacesLegales: {
+    marginLeft: 32,
+    marginTop: 4,
+    gap: 4,
+    alignItems: 'flex-start',
+  },
+
   checkBox: {
     width: 22,
     height: 22,
@@ -296,24 +295,7 @@ const estilos = StyleSheet.create({
     color: '#22C55E',
     fontSize: 11,
     fontWeight: '800',
-    marginLeft: 32,
     marginTop: 4,
-  },
-
-  politicasBox: {
-    marginLeft: 32,
-    marginTop: 8,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.045)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-  },
-
-  politicasTexto: {
-    color: '#B8C1CC',
-    fontSize: 11,
-    lineHeight: 17,
   },
 
   botonPrincipal: {

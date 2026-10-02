@@ -7,6 +7,7 @@ const localBinary = path.resolve(__dirname, '../../.tools/ngrok/ngrok.exe');
 const binary = process.env.NGROK_BIN || (fs.existsSync(localBinary) ? localBinary : 'ngrok');
 const url = process.env.NGROK_URL || process.env.NGROK;
 const args = ['http', String(process.env.PORT || 3000), '--config', path.resolve(__dirname, '../ngrok.yml')];
+if (process.env.NGROK_AUTHTOKEN) args.push('--authtoken', process.env.NGROK_AUTHTOKEN);
 if (url) args.push('--url', url);
 const tunnel = spawn(binary, args, { stdio: 'inherit', windowsHide: true });
 tunnel.on('error', () => {

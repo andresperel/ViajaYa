@@ -123,6 +123,25 @@ async function verificarViaje(req, res) {
   return res.status(200).json({ verificado: true, viaje });
 }
 
+async function vincularViajeUber(req, res) {
+  const idViaje = Number(req.params.idViaje);
+  const idViajeProveedor = typeof req.body?.idViajeProveedor === 'string'
+    ? req.body.idViajeProveedor.trim() : '';
+  if (!Number.isSafeInteger(idViaje) || idViaje <= 0 || !idViajeProveedor || idViajeProveedor.length > 200) {
+    return res.status(400).json({ mensaje: 'Indica un identificador de viaje de Uber válido.' });
+  }
+  const { data: viaje, error } = await supabase.from('Viaje')
+    .update({ proveedor: 'uber', idViajeProveedor })
+    .eq('idViaje', idViaje).eq('idUsuario', req.auth.userId)
+    .select().maybeSingle();
+  if (error) {
+    console.error('Error al vincular viaje Uber:', error);
+    return res.status(500).json({ mensaje: 'No se pudo vincular el viaje. Verifica que esté aplicada la migración de estados.' });
+  }
+  if (!viaje) return res.status(404).json({ mensaje: 'El viaje no fue encontrado.' });
+  return res.status(200).json({ mensaje: 'Seguimiento de Uber vinculado.', viaje });
+}
+
 async function actualizarEstadoViaje(req, res) {
   const idViaje = Number(req.params.idViaje);
   const estado = typeof req.body?.estado === 'string' ? req.body.estado.toLowerCase() : '';
@@ -151,4 +170,4 @@ async function actualizarEstadoViaje(req, res) {
   return res.status(200).json({ mensaje: 'Estado actualizado.', viaje });
 }
 
-module.exports = { guardarViaje, obtenerViajes, obtenerViajesPorUsuario, obtenerStatsViajes, verificarViaje, actualizarEstadoViaje };
+module.exports = { guardarViaje, obtenerViajes, obtenerViajesPorUsuario, obtenerStatsViajes, verificarViaje, actualizarEstadoViaje, vincularViajeUber };

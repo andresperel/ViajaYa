@@ -11,6 +11,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Platform,
 } from 'react-native';
 
 import { apiFetch, setAuthToken } from '../services/api';
@@ -23,6 +24,9 @@ export default function LoginScreen({ navigation, route }) {
   useEffect(() => navigation.addListener('blur', () => {
     navigation.setParams({ registroExitoso: undefined });
   }), [navigation]);
+  useEffect(() => {
+    if (route.params?.googleError) setMensajeEnPantalla(route.params.googleError);
+  }, [route.params?.googleError]);
   const [correoIngresado, setCorreoIngresado] = useState('');
   const [passwordIngresada, setPasswordIngresada] = useState('');
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
@@ -83,6 +87,16 @@ export default function LoginScreen({ navigation, route }) {
 
     try {
       setMensajeEnPantalla('Conectando con Google...');
+      if (Platform.OS === 'web') {
+        const redirectTo = `${window.location.origin}${window.location.pathname}`;
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo },
+        });
+        if (error) throw error;
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: GOOGLE_REDIRECT_URL, skipBrowserRedirect: true },
@@ -96,8 +110,12 @@ export default function LoginScreen({ navigation, route }) {
       }
 
       setMensajeEnPantalla('Validando cuenta de Google...');
-      const { params, errorCode } = QueryParams.getQueryParams(resultado.url);
+      const { params: queryParams, errorCode } = QueryParams.getQueryParams(resultado.url);
       if (errorCode) throw new Error(errorCode);
+      const fragment = resultado.url.includes('#')
+        ? Object.fromEntries(new URLSearchParams(resultado.url.split('#').pop()))
+        : {};
+      const params = { ...fragment, ...queryParams };
       if (!params.access_token) throw new Error('Google no devolvió una sesión válida.');
 
       await iniciarSesionSocialBackend({

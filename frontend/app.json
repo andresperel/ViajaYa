@@ -44,11 +44,11 @@
       ],
       "expo-status-bar"
     ],
+    "owner": "ivoshoffer",
     "extra": {
       "eas": {
-        "projectId": "303a831d-6996-4e0b-8441-81a057fe38a9"
+        "projectId": "1b124668-46a0-4a5c-a8c4-73b0e9b21efc"
       }
-    },
-    "owner": "viajaya044"
+    }
   }
 }

@@ -34,7 +34,7 @@ async function recibirWebhookUber(req, res) {
       estado,
       estadoProveedor,
       ultimoEventoProveedor: eventId,
-      fechaConfirmacion: estado === 'pendiente' ? null : new Date().toISOString(),
+      fechaConfirmacion: new Date().toISOString(),
     })
     .eq('proveedor', 'uber')
     .eq('idViajeProveedor', idViajeProveedor);

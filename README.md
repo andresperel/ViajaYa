@@ -1,4 +1,33 @@
-# ViajaYa — Registro con React Hook Form
+# ViajaYa — React Context y React Hook Form
+
+## Trabajo práctico: React Context
+
+Repositorio: [andresperel/ViajaYa](https://github.com/andresperel/ViajaYa).
+
+El estado global mantiene el idioma elegido entre pantallas y comparte avisos de viajes guardados sin pasarlos por props ni por parámetros de navegación.
+
+| Consigna | Implementación |
+| --- | --- |
+| `createContext` | `frontend/context/AppContext.js` crea `AppContext`. |
+| Provider | `frontend/app.js` envuelve la navegación con `AppProvider`. |
+| Al menos dos consumidores con `useContext` | El hook `useApp` llama a `useContext(AppContext)`. Lo consumen `IdiomaScreen`, `PerfilScreen`, `HomeScreen`, `ResultadosScreen`, `NotificacionesScreen`, `AyudaScreen` y `PrivacidadScreen`. |
+| Estado funcional | Idioma modifica la preferencia y las otras pantallas actualizan sus textos. Resultados agrega avisos después de guardar un viaje; Inicio muestra el indicador de avisos sin leer y Notificaciones muestra la lista y los marca como leídos. |
+
+El Provider administra `idioma` y `notificaciones` con `useState` y expone `setIdioma`, `agregarNotificacion` y `marcarNotificacionesLeidas`. La lista se actualiza usando el estado anterior. `useApp` informa un error si se usa fuera del Provider.
+
+Los avisos empiezan vacíos y se generan tras una respuesta exitosa de `POST /viaje`; si el guardado falla, no se agrega ningún aviso. Se conservan los últimos 12 durante la ejecución de la aplicación. Idioma y avisos se reinician al recargar; no hay persistencia ni notificaciones push. El aviso confirma el guardado en ViajaYa, no una reserva en la empresa de transporte.
+
+### Comprobación manual
+
+1. Iniciar sesión e ir a Perfil → Idioma → English. Volver a Perfil e Inicio y comprobar sus textos traducidos. Elegir Español y comprobar el cambio nuevamente.
+2. En una ejecución nueva, comprobar que Inicio no muestra avisos sin leer y Notificaciones muestra la lista vacía.
+3. Buscar un recorrido y elegir una oferta. Tras guardar exitosamente, volver a Inicio: debe aparecer el indicador de avisos sin leer.
+4. Abrir Notificaciones y comprobar el aviso con empresa, origen y destino. Permanecer al menos 600 ms y volver a Inicio: el indicador desaparece y el aviso permanece en la lista.
+5. Guardar otro viaje: se agrega un nuevo aviso y se reactiva el indicador. Probar un error de guardado: no debe agregar avisos.
+
+Para entregar, subir los cambios y adjuntar el enlace al repositorio público actualizado. El enlace anterior corresponde al remoto configurado; comprobar su visibilidad pública antes de la entrega.
+
+## Trabajo práctico: Registro con React Hook Form
 
 Este TP adapta el formulario existente de **`frontend/screens/RegisterScreen.js`**. Se conserva el diseño y el flujo de ViajaYa: registro → backend Express → Supabase → pantalla de inicio de sesión. No se agregaron campos: se utiliza **Nombre completo**, ya existente, en lugar de inventar un nombre de usuario.
 

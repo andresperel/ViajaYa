@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { apiFetch } from '../services/api';
+import { useApp } from '../context/AppContext';
 
 import {
   SafeAreaView,
@@ -18,6 +19,7 @@ const FILTROS = [
 ];
 
 export default function ResultadosScreen({ navigation, route }) {
+  const { agregarNotificacion } = useApp();
   const {
     origenIngresado,
     destinoIngresado,
@@ -66,6 +68,11 @@ export default function ResultadosScreen({ navigation, route }) {
           tiempoEstimado: oferta.duracionMin || oferta.tiempoEstimado || ruta.duracionMin,
           idTipoServicio: oferta.idTipoServicio,
         }),
+      });
+
+      agregarNotificacion({
+        titulo: 'Viaje guardado',
+        texto: `Tu viaje con ${oferta.empresa} de ${origenIngresado} a ${destinoIngresado} quedó guardado en Mis viajes.`,
       });
 
       navigation.navigate('ViajeConfirmado', {

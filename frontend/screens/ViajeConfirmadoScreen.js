@@ -203,14 +203,7 @@ export default function ViajeConfirmadoScreen({ navigation, route }) {
 
         <TouchableOpacity
           style={estilos.botonSecundario}
-          onPress={() => navigation.navigate('Home', {
-            usuario,
-            notificaciones: [{
-              id: Date.now(),
-              titulo: 'Viaje guardado',
-              texto: `Tu viaje con ${empresaElegida} quedo guardado en Mis viajes.`,
-            }],
-          })}
+          onPress={() => navigation.navigate('Home', { usuario })}
         >
           <Text style={estilos.textoBotonSecundario}>Volver al inicio</Text>
         </TouchableOpacity>

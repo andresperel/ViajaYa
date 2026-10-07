@@ -15,6 +15,7 @@ import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import HomeScreen from './screens/HomeScreen';
+import DashboardBusinessScreen from './screens/DashboardBusinessScreen';
 import ResultadosScreen from './screens/ResultadosScreen';
 import ViajeConfirmadoScreen from './screens/ViajeConfirmadoScreen';
 import MisViajesScreen from './screens/MisViajesScreen';
@@ -148,6 +149,7 @@ export default function App() {
         />
 
         <Stack.Screen name="Idioma" component={IdiomaScreen} />
+        <Stack.Screen name="DashboardBusiness" component={DashboardBusinessScreen} />
         <Stack.Screen name="Ayuda" component={AyudaScreen} />
         <Stack.Screen name="Privacidad" component={PrivacidadScreen} />
         <Stack.Screen name="Terminos" component={TerminosScreen} />

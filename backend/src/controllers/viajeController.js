@@ -1,6 +1,13 @@
 const supabase = require('../config/supabase');
+const { validateTripClassification } = require('../validation/businessTrips');
 
 async function guardarViaje(req, res) {
+  let clasificacion;
+  try {
+    clasificacion = validateTripClassification(req.body);
+  } catch (error) {
+    return res.status(400).json({ mensaje: error.message });
+  }
   const {
     calleOrigen,
     calleDestino,
@@ -23,6 +30,7 @@ async function guardarViaje(req, res) {
   }
 
   const datosViaje = {
+    ...clasificacion,
     idViaje: Date.now(),
     calleOrigen,
     alturaOrigen: 0,
@@ -42,10 +50,20 @@ async function guardarViaje(req, res) {
     .select()
     .single();
 
-  // Mantiene el alta operativa mientras se aplica la migracion de estados.
-  if (error && /estado|fechaConfirmacion/i.test(error.message) && /does not exist|schema cache/i.test(error.message)) {
-    delete datosViaje.estado;
-    delete datosViaje.fechaConfirmacion;
+  // Compatibility while local migrations await approval. Never drop Business metadata.
+  for (let retry = 0; retry < 2 && error; retry += 1) {
+    const missingColumn = /does not exist|schema cache|could not find/i.test(error.message);
+    if (!missingColumn) break;
+    if (/tipoViaje|motivoViaje/i.test(error.message)) {
+      if (clasificacion.tipoViaje === 'business' || clasificacion.motivoViaje) {
+        return res.status(503).json({ mensaje: 'El guardado Business requiere aplicar la migración de ViajaYa Business.' });
+      }
+      delete datosViaje.tipoViaje;
+      delete datosViaje.motivoViaje;
+    } else if (/estado|fechaConfirmacion/i.test(error.message)) {
+      delete datosViaje.estado;
+      delete datosViaje.fechaConfirmacion;
+    } else break;
     ({ data: viaje, error } = await supabase.from('Viaje').insert([datosViaje]).select().single());
   }
 
@@ -54,7 +72,7 @@ async function guardarViaje(req, res) {
     return res.status(500).json({ mensaje: 'Error al guardar viaje.', detalle: error.message });
   }
 
-  return res.status(201).json({ mensaje: 'Viaje guardado correctamente.', viaje });
+  return res.status(201).json({ mensaje: 'Viaje guardado correctamente.', viaje: { ...viaje, ...clasificacion } });
 }
 
 async function obtenerViajes(req, res) {

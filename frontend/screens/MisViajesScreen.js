@@ -1,6 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getMyTrips } from '../services/api';
+import { useApp } from '../context/AppContext';
+import { useFocusEffect } from '@react-navigation/native';
+import BusinessBadge from '../components/BusinessBadge';
+import { filterBusinessTrips, filterPeriod, estimatedCost, tripProvider } from '../utils/businessTrips';
 
 import {
   SafeAreaView,
@@ -13,20 +17,26 @@ import {
 
 export default function MisViajesScreen({ navigation, route }) {
   const usuario = route?.params?.usuario;
+  const { modoViajaYa } = useApp();
+  const business = modoViajaYa === 'business';
 
   const [viajesGuardados, setViajesGuardados] = useState([]);
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('Cargando viajes...');
   const [filtroActivo, setFiltroActivo] = useState('todos');
 
-  useEffect(() => {
-    obtenerMisViajes();
-  }, []);
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    obtenerMisViajes(() => active);
+    return () => { active = false; };
+  }, [usuario?.idUsuario]));
 
-  const obtenerMisViajes = async () => {
+  const obtenerMisViajes = async (isActive = () => true) => {
     try {
       setMensajeEnPantalla('Cargando viajes...');
+      setViajesGuardados([]);
 
       const datosRecibidos = await getMyTrips();
+      if (!isActive()) return;
       setViajesGuardados(Array.isArray(datosRecibidos) ? datosRecibidos : []);
 
       if (!datosRecibidos || datosRecibidos.length === 0) {
@@ -35,11 +45,13 @@ export default function MisViajesScreen({ navigation, route }) {
         setMensajeEnPantalla('');
       }
     } catch (error) {
+      if (!isActive()) return;
       setMensajeEnPantalla(error.status === 401
         ? 'Volve a iniciar sesion para ver tus viajes'
         : 'No pude conectarme con el servidor');
       console.log('Error al obtener viajes:', error);
     } finally {
+      if (!isActive()) return;
       setMensajeEnPantalla((mensajeActual) => (
         mensajeActual === 'Cargando viajes...' ? '' : mensajeActual
       ));
@@ -47,6 +59,7 @@ export default function MisViajesScreen({ navigation, route }) {
   };
 
   const viajesFiltrados = useMemo(() => {
+    if (business) return filterPeriod(filterBusinessTrips(viajesGuardados), filtroActivo);
     if (filtroActivo === 'todos') return viajesGuardados;
 
     const ahora = new Date();
@@ -56,7 +69,7 @@ export default function MisViajesScreen({ navigation, route }) {
       const mismoMes = fecha.getMonth() === ahora.getMonth() && fecha.getFullYear() === ahora.getFullYear();
       return filtroActivo === 'mes' ? mismoMes : !mismoMes;
     });
-  }, [viajesGuardados, filtroActivo]);
+  }, [viajesGuardados, filtroActivo, business]);
 
   return (
     <SafeAreaView style={estilos.container}>
@@ -67,8 +80,9 @@ export default function MisViajesScreen({ navigation, route }) {
           </TouchableOpacity>
 
           <View>
-            <Text style={estilos.titulo}>Tus viajes</Text>
-            <Text style={estilos.subtitulo}>Historial y viajes en curso</Text>
+            <Text style={estilos.titulo}>{business ? 'Tus viajes laborales' : 'Tus viajes'}</Text>
+            <Text style={estilos.subtitulo}>{business ? 'Viajes Business guardados' : 'Historial y viajes en curso'}</Text>
+            {business && <BusinessBadge />}
           </View>
         </View>
 
@@ -78,7 +92,12 @@ export default function MisViajesScreen({ navigation, route }) {
           <FiltroChip id="anteriores" label="Anteriores" filtroActivo={filtroActivo} onPress={setFiltroActivo} />
         </View>
 
-        {mensajeEnPantalla !== '' && <Text style={estilos.mensaje}>{mensajeEnPantalla}</Text>}
+        {mensajeEnPantalla !== '' && <Text style={estilos.mensaje}>{business && mensajeEnPantalla === 'Todavia no tenes viajes guardados' ? 'Todavía no tenés viajes laborales guardados.' : mensajeEnPantalla}</Text>}
+        {business && !mensajeEnPantalla && <>
+          <Text style={estilos.subtitulo}>Costo estimado del período: ${estimatedCost(viajesFiltrados).toLocaleString('es-AR')}</Text>
+          <Text style={estilos.subtitulo}>{filtroActivo === 'mes' ? 'Este mes' : filtroActivo === 'anteriores' ? 'Meses anteriores' : 'Todo el historial'}</Text>
+          {!viajesFiltrados.length && <Text style={estilos.mensaje}>No tenés viajes laborales guardados en este período.</Text>}
+        </>}
 
         <View style={estilos.listaViajes}>
           {viajesFiltrados.slice(0, 20).map((viaje, index) => (
@@ -95,11 +114,12 @@ export default function MisViajesScreen({ navigation, route }) {
 }
 
 function FiltroChip({ id, label, filtroActivo, onPress }) {
+  const { modoViajaYa } = useApp();
   return (
     <TouchableOpacity activeOpacity={0.85} onPress={() => onPress(id)}>
       {filtroActivo === id ? (
         <LinearGradient
-          colors={['#2563EB', '#22C55E']}
+          colors={modoViajaYa === 'business' ? ['#142D50', '#2563EB'] : ['#2563EB', '#22C55E']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={estilos.chipActivo}
@@ -127,6 +147,10 @@ function ViajeCard({ viaje }) {
       <View style={estilos.viajeInfo}>
         <Text style={estilos.viajeRuta} numberOfLines={1}>{viaje.calleOrigen}</Text>
         <Text style={estilos.viajeRutaDestino} numberOfLines={1}>{viaje.calleDestino}</Text>
+        {viaje.tipoViaje === 'business' && <>
+          <Text style={estilos.viajeMeta}>{tripProvider(viaje)} · Precio estimado</Text>
+          {!!viaje.motivoViaje && <Text style={estilos.viajeMeta}>Motivo: {viaje.motivoViaje}</Text>}
+        </>}
         <Text style={estilos.viajeMeta}>{fecha} · {viaje.tiempoEstimado} min</Text>
       </View>
 

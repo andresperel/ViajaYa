@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "test:business": "node --test tests/businessTrips.test.cjs",
     "test:registration": "node --test tests/registration.test.cjs",
     "start": "expo start",
     "android": "expo run:android",

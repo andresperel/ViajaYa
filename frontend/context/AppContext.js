@@ -4,6 +4,11 @@ const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   const [idioma, setIdioma] = useState('es');
+  const [modoViajaYa, setModoViajaYa] = useState('personal');
+  const cambiarModoViajaYa = useCallback((modo) => {
+    if (!['personal', 'business'].includes(modo)) throw new Error('Modo de ViajaYa inválido.');
+    setModoViajaYa(modo);
+  }, []);
   const [notificaciones, setNotificaciones] = useState([]);
   const siguienteId = useRef(0);
 
@@ -25,11 +30,13 @@ export function AppProvider({ children }) {
 
   const value = useMemo(() => ({
     idioma,
+    modoViajaYa,
+    cambiarModoViajaYa,
     setIdioma,
     notificaciones,
     agregarNotificacion,
     marcarNotificacionesLeidas,
-  }), [idioma, notificaciones, agregarNotificacion, marcarNotificacionesLeidas]);
+  }), [idioma, modoViajaYa, cambiarModoViajaYa, notificaciones, agregarNotificacion, marcarNotificacionesLeidas]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

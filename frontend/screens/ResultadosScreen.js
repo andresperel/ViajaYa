@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { apiFetch } from '../services/api';
 import { useApp } from '../context/AppContext';
+import BusinessBadge from '../components/BusinessBadge';
 
 import {
   SafeAreaView,
@@ -25,6 +26,8 @@ export default function ResultadosScreen({ navigation, route }) {
     destinoIngresado,
     usuario,
     datosViaje,
+    tipoViaje = 'personal',
+    motivoViaje,
   } = route.params;
 
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
@@ -67,6 +70,8 @@ export default function ResultadosScreen({ navigation, route }) {
           precioEstimado: oferta.precio,
           tiempoEstimado: oferta.duracionMin || oferta.tiempoEstimado || ruta.duracionMin,
           idTipoServicio: oferta.idTipoServicio,
+          tipoViaje,
+          motivoViaje,
         }),
       });
 
@@ -80,6 +85,8 @@ export default function ResultadosScreen({ navigation, route }) {
         precioElegido: oferta.precio,
         ofertaElegida: oferta,
         viaje: viajeGuardado.viaje,
+        tipoViaje,
+        motivoViaje,
         origenIngresado,
         destinoIngresado,
         origenCoordenadas: datosViaje?.origen?.coordinates,
@@ -126,6 +133,7 @@ export default function ResultadosScreen({ navigation, route }) {
         </View>
 
         <View style={estilos.resumenRuta}>
+          {tipoViaje === 'business' && <><BusinessBadge />{!!motivoViaje && <Text style={estilos.resumenTexto}>Motivo: {motivoViaje}</Text>}</>}
           <Text style={estilos.resumenTitulo}>Ruta real por calles</Text>
           <Text style={estilos.resumenTexto}>
             {ruta.distanciaKm || datosViaje?.distanciaKm} km · {ruta.duracionMin || datosViaje?.duracionMin} min aprox. · {ruta.proveedor || 'rutas'}
@@ -141,7 +149,7 @@ export default function ResultadosScreen({ navigation, route }) {
             >
               {filtroActivo === filtro.id ? (
                 <LinearGradient
-                  colors={['#2563EB', '#22C55E']}
+                  colors={tipoViaje === 'business' ? ['#142D50', '#2563EB'] : ['#2563EB', '#22C55E']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={estilos.filtroActivo}
@@ -164,7 +172,7 @@ export default function ResultadosScreen({ navigation, route }) {
               activeOpacity={0.88}
               onPress={() => elegirViaje(oferta)}
             >
-              <View style={index === 0 ? estilos.cardDestacada : estilos.cardOferta}>
+              <View style={[index === 0 ? estilos.cardDestacada : estilos.cardOferta, tipoViaje === 'business' && index === 0 && estilos.cardBusiness]}>
                 <View
                   style={[
                     estilos.logoEmpresa,
@@ -198,7 +206,7 @@ export default function ResultadosScreen({ navigation, route }) {
                   <Text style={estilos.precio}>${oferta.precio.toLocaleString('es-AR')}</Text>
 
                   <LinearGradient
-                    colors={['#2563EB', '#22C55E']}
+                    colors={tipoViaje === 'business' ? ['#142D50', '#2563EB'] : ['#2563EB', '#22C55E']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={estilos.botonElegir}
@@ -218,6 +226,7 @@ export default function ResultadosScreen({ navigation, route }) {
 }
 
 const estilos = StyleSheet.create({
+  cardBusiness: { backgroundColor: '#142D50', borderColor: '#2563EB' },
   container: { flex: 1, backgroundColor: '#0F1F3A' },
   contenido: { padding: 24, paddingBottom: 40 },
   header: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },

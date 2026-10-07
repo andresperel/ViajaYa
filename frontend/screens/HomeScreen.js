@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_URL } from '../services/api';
 import { useApp } from '../context/AppContext';
+import BusinessBadge from '../components/BusinessBadge';
+import BusinessOverview from '../components/BusinessOverview';
+import useBusinessTrips from '../hooks/useBusinessTrips';
 
 import {
   SafeAreaView,
@@ -15,7 +18,10 @@ import {
 
 export default function HomeScreen({ navigation, route }) {
   const usuario = route?.params?.usuario;
-  const { idioma, notificaciones } = useApp();
+  const { idioma, notificaciones, modoViajaYa } = useApp();
+  const business = modoViajaYa === 'business';
+  const businessState = useBusinessTrips(business, usuario?.idUsuario);
+  const [motivoViaje, setMotivoViaje] = useState('');
   const ingles = idioma === 'en';
 
   const [origenIngresado, setOrigenIngresado] = useState('');
@@ -113,6 +119,7 @@ export default function HomeScreen({ navigation, route }) {
   };
 
   const manejarBusquedaViaje = async () => {
+    const clasificacion = { tipoViaje: modoViajaYa, motivoViaje: business ? motivoViaje.trim() : undefined };
     setMensajeEnPantalla('');
 
     // No dejamos solicitudes del autocompletado compitiendo con el calculo.
@@ -155,6 +162,7 @@ export default function HomeScreen({ navigation, route }) {
           destinoIngresado: datosRecibidos.destino?.label || destinoIngresado,
           usuario,
           datosViaje: datosRecibidos,
+          ...clasificacion,
         });
       } else {
         setMensajeEnPantalla(datosRecibidos.mensaje || 'No pude calcular el viaje');
@@ -185,7 +193,7 @@ export default function HomeScreen({ navigation, route }) {
         <View style={estilos.header}>
           <View style={estilos.usuarioBox}>
             <LinearGradient
-              colors={['#2563EB', '#22C55E']}
+              colors={business ? ['#142D50', '#2563EB'] : ['#2563EB', '#22C55E']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={estilos.avatar}
@@ -210,8 +218,9 @@ export default function HomeScreen({ navigation, route }) {
         </View>
 
         <View style={estilos.hero}>
-          <Text style={estilos.titulo}>{ingles ? 'Where are we going?' : '¿A dónde vamos?'}</Text>
-          <Text style={estilos.subtitulo}>{ingles ? 'Compare in seconds. Pay less.' : 'Compará en segundos. Pagá menos.'}</Text>
+          {business && <><Text style={estilos.nombreUsuario}>ViajaYa BUSINESS</Text><BusinessBadge /></>}
+          <Text style={estilos.titulo}>{business ? (ingles ? 'Where are you going for work?' : '¿A dónde vas por trabajo?') : (ingles ? 'Where are we going?' : '¿A dónde vamos?')}</Text>
+          <Text style={estilos.subtitulo}>{business ? 'Compará y organizá tus viajes laborales.' : (ingles ? 'Compare in seconds. Pay less.' : 'Compará en segundos. Pagá menos.')}</Text>
         </View>
 
         <View style={estilos.cardBusqueda}>
@@ -284,9 +293,14 @@ export default function HomeScreen({ navigation, route }) {
           </View>
         </View>
 
+        {business && <View style={[estilos.cardBusqueda, { flexDirection: 'column' }]}>
+          <Text style={estilos.labelInput}>Motivo del viaje (opcional)</Text>
+          <TextInput style={estilos.input} value={motivoViaje} onChangeText={setMotivoViaje} maxLength={200} placeholder="Reunión con cliente" placeholderTextColor="#7F8EA3" />
+        </View>}
+
         <TouchableOpacity onPress={manejarBusquedaViaje} activeOpacity={0.85}>
           <LinearGradient
-            colors={['#2563EB', '#22C55E']}
+            colors={business ? ['#142D50', '#2563EB'] : ['#2563EB', '#22C55E']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={estilos.botonPrincipal}
@@ -297,7 +311,7 @@ export default function HomeScreen({ navigation, route }) {
 
         <Text style={estilos.mensaje}>{mensajeEnPantalla}</Text>
 
-        <LinearGradient
+        {business ? <><BusinessOverview state={businessState} home /><TouchableOpacity onPress={() => navigation.navigate('DashboardBusiness', { usuario })}><Text style={[estilos.accesoTitulo, { color: '#7DD3FC', marginTop: 16 }]}>Dashboard Business →</Text></TouchableOpacity></> : <LinearGradient
           colors={['rgba(37,99,235,0.18)', 'rgba(34,197,94,0.16)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -313,7 +327,7 @@ export default function HomeScreen({ navigation, route }) {
           </View>
 
           <Text style={estilos.rayo}>⚡</Text>
-        </LinearGradient>
+        </LinearGradient>}
 
         <View style={estilos.seccionHeader}>
           <Text style={estilos.seccionTitulo}>Accesos rapidos</Text>

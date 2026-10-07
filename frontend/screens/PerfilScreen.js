@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { getMyTripStats } from '../services/api';
 import { useApp } from '../context/AppContext';
+import BusinessBadge from '../components/BusinessBadge';
 
 import {
   SafeAreaView,
@@ -15,7 +16,8 @@ import {
 
 export default function PerfilScreen({ navigation, route }) {
   const usuario = route.params?.usuario;
-  const { idioma } = useApp();
+  const { idioma, modoViajaYa, cambiarModoViajaYa } = useApp();
+  const business = modoViajaYa === 'business';
   const ingles = idioma === 'en';
   const [cantidadViajes, setCantidadViajes] = useState(0);
   const [totalGastado, setTotalGastado] = useState(0);
@@ -64,7 +66,7 @@ export default function PerfilScreen({ navigation, route }) {
 
         <View style={estilos.cardPerfil}>
           <LinearGradient
-            colors={['#2563EB', '#22C55E']}
+            colors={business ? ['#142D50', '#2563EB'] : ['#2563EB', '#22C55E']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={estilos.avatar}
@@ -83,10 +85,20 @@ export default function PerfilScreen({ navigation, route }) {
           </View>
         </View>
 
-        <View style={estilos.statsGrid}>
+        {!business && <View style={estilos.statsGrid}>
           <Stat value={String(cantidadViajes)} label={ingles ? 'Trips' : 'Viajes'} />
           <Stat value={`$${totalGastado.toLocaleString('es-AR')}`} label={ingles ? 'Spent' : 'Gastado'} />
           <Stat value={cantidadViajes > 0 ? (ingles ? 'Active' : 'Activo') : (ingles ? 'New' : 'Nuevo')} label={ingles ? 'Status' : 'Estado'} />
+        </View>}
+
+        <View style={[estilos.lista, { padding: 18, borderRadius: 22, backgroundColor: '#142746' }]}>
+          <Text style={estilos.nombre}>ViajaYa Business</Text>
+          <Text style={estilos.email}>Gestioná tus viajes laborales de forma simple.</Text>
+          {business && <><BusinessBadge /><Text style={estilos.nombre}>Modo Business activo</Text></>}
+          <TouchableOpacity style={estilos.botonSecundario} onPress={() => cambiarModoViajaYa(business ? 'personal' : 'business')}>
+            <Text style={estilos.textoBotonSecundario}>{business ? 'Volver a ViajaYa Personal' : 'Cambiar a Business'}</Text>
+          </TouchableOpacity>
+          {business && <TouchableOpacity style={estilos.botonSecundario} onPress={() => navigation.navigate('DashboardBusiness', { usuario })}><Text style={estilos.textoBotonSecundario}>Dashboard Business</Text></TouchableOpacity>}
         </View>
 
         <View style={estilos.lista}>

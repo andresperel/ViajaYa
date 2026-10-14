@@ -7,9 +7,10 @@ const { resolve } = require('node:path');
 const configPath = resolve(__dirname, '../src/config/supabase.js');
 const inserts = [];
 let responses = [];
+let membership = { data: { empresaId: 'empresa-demo', activo: true }, error: null };
 require.cache[configPath] = {
   id: configPath, filename: configPath, loaded: true,
-  exports: { from: () => ({ insert: (rows) => {
+  exports: { from: (table) => table === 'EmpresaUsuario' ? { select: () => ({ eq: () => ({ maybeSingle: async () => membership }) }) } : ({ insert: (rows) => {
     inserts.push({ ...rows[0] });
     return { select: () => ({ single: async () => responses.shift() }) };
   } }) },
@@ -41,14 +42,27 @@ test('el controlador guarda clasificación, motivo y dueño autenticado', async 
   assert.equal(inserts[0].tipoViaje, 'business');
   assert.equal(inserts[0].motivoViaje, 'Cliente');
   assert.equal(inserts[0].idUsuario, 42);
+  assert.equal(inserts[0].empresaId, 'empresa-demo');
   assert.equal(inserts[0].estado, 'pendiente');
   assert.equal(res.data.viaje.tipoViaje, 'business');
+});
+test('rechaza viajes corporativos de empleados inactivos y no inserta', async () => {
+  membership = { data: { empresaId: 'empresa-demo', activo: false }, error: null };
+  try {
+    const res = await save({ tipoViaje: 'business', empresaId: 'empresa-ajena' }, []);
+    assert.equal(res.statusCode, 403);
+    assert.equal(inserts.length, 0);
+  } finally { membership = { data: { empresaId: 'empresa-demo', activo: true }, error: null }; }
 });
 test('sin migración Business responde 503 y nunca reintenta como personal', async () => {
   const res = await save({ tipoViaje: 'business' }, [{ data: null, error: { message: "Could not find the 'tipoViaje' column in the schema cache" } }]);
   assert.equal(res.statusCode, 503);
   assert.equal(inserts.length, 1);
   assert.equal(inserts[0].tipoViaje, 'business');
+});
+test('inactivación entre verificación e inserción devuelve 403', async () => {
+  const res = await save({ tipoViaje: 'business' }, [{ data: null, error: { code: '42501', message: 'No tenés acceso activo a esta empresa.' } }]);
+  assert.equal(res.statusCode, 403);
 });
 test('Personal sigue guardando si faltan ambas migraciones', async () => {
   const res = await save({}, [

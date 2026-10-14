@@ -29,7 +29,16 @@ async function guardarViaje(req, res) {
     return res.status(400).json({ mensaje: 'Faltan datos para guardar el viaje.' });
   }
 
+  let empresaId;
+  if (clasificacion.tipoViaje === 'business') {
+    const { data: miembro, error: membershipError } = await supabase.from('EmpresaUsuario')
+      .select('empresaId,activo').eq('usuarioId', req.auth.userId).maybeSingle();
+    if (membershipError) return res.status(503).json({ mensaje: 'No se pudo verificar el acceso corporativo.' });
+    if (!miembro?.activo) return res.status(403).json({ mensaje: 'No tenés acceso activo a una empresa.' });
+    empresaId = miembro.empresaId;
+  }
   const datosViaje = {
+    ...(empresaId ? { empresaId } : {}),
     ...clasificacion,
     idViaje: Date.now(),
     calleOrigen,
@@ -68,6 +77,9 @@ async function guardarViaje(req, res) {
   }
 
   if (error) {
+    if (clasificacion.tipoViaje === 'business' && error.code === '42501') {
+      return res.status(403).json({ mensaje: 'Tu acceso corporativo fue inactivado. Volvé a tu perfil.' });
+    }
     console.error('Error al guardar viaje:', error);
     return res.status(500).json({ mensaje: 'Error al guardar viaje.', detalle: error.message });
   }

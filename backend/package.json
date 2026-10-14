@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "main": "src/server.js",
   "scripts": {
-    "test:business": "node --test tests/businessTrips.test.cjs",
+    "test:business": "node --test tests/businessTrips.test.cjs tests/companyAccess.test.cjs",
     "start": "node --use-system-ca src/server.js",
     "dev": "nodemon --exec \"node --use-system-ca\" src/server.js",
     "migrate:passwords": "node --use-system-ca scripts/migratePasswordsToBcrypt.js",
+    "migrate:business": "node --use-system-ca scripts/applyBusinessMigration.js",
+    "check:business": "node --use-system-ca scripts/checkBusiness.js",
+    "smoke:business": "node --use-system-ca scripts/smokeBusiness.js",
     "tunnel": "node --use-system-ca scripts/startTunnel.js"
   },
   "dependencies": {

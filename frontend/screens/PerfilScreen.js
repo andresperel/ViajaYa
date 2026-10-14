@@ -1,9 +1,11 @@
 import React, { useCallback, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
-import { getMyTripStats } from '../services/api';
+import { API_URL, getMyTripStats, setAuthToken } from '../services/api';
 import { useApp } from '../context/AppContext';
 import BusinessBadge from '../components/BusinessBadge';
+import CompanyAccess from '../components/CompanyAccess';
+import useCompanyAccess from '../hooks/useCompanyAccess';
 
 import {
   SafeAreaView,
@@ -12,15 +14,28 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Linking,
 } from 'react-native';
 
 export default function PerfilScreen({ navigation, route }) {
   const usuario = route.params?.usuario;
-  const { idioma, modoViajaYa, cambiarModoViajaYa } = useApp();
+  useCompanyAccess(usuario?.idUsuario);
+  const { idioma, modoViajaYa, cambiarModoViajaYa, setEmpresa } = useApp();
   const business = modoViajaYa === 'business';
   const ingles = idioma === 'en';
   const [cantidadViajes, setCantidadViajes] = useState(0);
   const [totalGastado, setTotalGastado] = useState(0);
+  const [errorPanel, setErrorPanel] = useState('');
+
+  const abrirPanelEmpresas = async () => {
+    setErrorPanel('');
+    try {
+      if (!API_URL) throw new Error('Falta configurar la conexión con ViajaYa.');
+      await Linking.openURL(`${API_URL}/business-admin/`);
+    } catch {
+      setErrorPanel(ingles ? 'Could not open the administration panel. Please try again.' : 'No pude abrir el panel de administración. Intentá nuevamente.');
+    }
+  };
 
   useFocusEffect(useCallback(() => {
     cargarStats();
@@ -95,9 +110,12 @@ export default function PerfilScreen({ navigation, route }) {
           <Text style={estilos.nombre}>ViajaYa Business</Text>
           <Text style={estilos.email}>Gestioná tus viajes laborales de forma simple.</Text>
           {business && <><BusinessBadge /><Text style={estilos.nombre}>Modo Business activo</Text></>}
-          <TouchableOpacity style={estilos.botonSecundario} onPress={() => cambiarModoViajaYa(business ? 'personal' : 'business')}>
-            <Text style={estilos.textoBotonSecundario}>{business ? 'Volver a ViajaYa Personal' : 'Cambiar a Business'}</Text>
+          <CompanyAccess />
+          <TouchableOpacity style={estilos.botonSecundario} accessibilityRole="link" onPress={abrirPanelEmpresas}>
+            <Text style={estilos.textoBotonSecundario}>{ingles ? 'Manage companies' : 'Administrar empresas'}</Text>
           </TouchableOpacity>
+          <Text style={estilos.email}>{ingles ? 'Administrators: open the web panel to create companies, obtain their codes and manage employees.' : 'Administradores: abrí el panel web para crear empresas, obtener sus códigos y gestionar empleados.'}</Text>
+          {!!errorPanel && <Text accessibilityRole="alert" style={{ color: '#FCA5A5', marginTop: 10 }}>{errorPanel}</Text>}
           {business && <TouchableOpacity style={estilos.botonSecundario} onPress={() => navigation.navigate('DashboardBusiness', { usuario })}><Text style={estilos.textoBotonSecundario}>Dashboard Business</Text></TouchableOpacity>}
         </View>
 
@@ -112,7 +130,10 @@ export default function PerfilScreen({ navigation, route }) {
           <Text style={estilos.textoBotonSecundario}>{ingles ? 'Back to home' : 'Volver al inicio'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={estilos.botonCerrar} onPress={() => navigation.navigate('Welcome')}>
+        <TouchableOpacity style={estilos.botonCerrar} onPress={() => {
+          setAuthToken(null); setEmpresa(null); cambiarModoViajaYa('personal');
+          navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
+        }}>
           <Text style={estilos.textoCerrar}>{ingles ? 'Sign out' : 'Cerrar sesion'}</Text>
         </TouchableOpacity>
       </ScrollView>

@@ -1,8 +1,10 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
+import { useApp } from '../context/AppContext';
 
 export default function BusinessBadge() {
-  return <Text style={styles.badge}>BUSINESS</Text>;
+  const { empresa } = useApp();
+  return <Text style={styles.badge}>BUSINESS{empresa ? ` · ${empresa.nombre}` : ''}</Text>;
 }
 
 const styles = StyleSheet.create({

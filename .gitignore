@@ -3,4 +3,5 @@
 **/node_modules/
 backend/ngrok.local.yml
 *.log
+.verification/
 frontend/.expo-business-export/

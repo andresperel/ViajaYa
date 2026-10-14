@@ -57,6 +57,8 @@ app.get('/descargar-apk', (req, res) => {
 });
 
 app.use('/', authRoutes);
+app.use('/', require('./routes/businessRoutes'));
+app.use('/business-admin', express.static(path.join(__dirname, '../public/business-admin')));
 app.use('/', viajeRoutes);
 app.use('/', uberRoutes);
 app.use('/', routeRoutes);

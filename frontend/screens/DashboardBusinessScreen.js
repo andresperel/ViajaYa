@@ -16,7 +16,7 @@ export default function DashboardBusinessScreen({ navigation, route }) {
       <BusinessBadge />
       <View style={styles.periods}>{[['mes', 'Este mes'], ['todos', 'Todo el historial'], ['anteriores', 'Anteriores']].map(([id, label]) => <TouchableOpacity key={id} onPress={() => setPeriod(id)} style={[styles.chip, id === period && styles.selected]}><Text style={styles.text}>{label}</Text></TouchableOpacity>)}</View>
       <BusinessOverview state={state} period={period} />
-    </> : <Text style={styles.text}>Activá Business desde tu perfil para ver el dashboard.</Text>}
+    </> : <Text style={styles.text}>Ingresá el código de tu empresa desde Perfil para acceder a Business.</Text>}
   </ScrollView></SafeAreaView>;
 }
 

@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
-import { API_URL } from '../services/api';
+import { API_URL, setAuthToken } from '../services/api';
 import { useApp } from '../context/AppContext';
 import BusinessBadge from '../components/BusinessBadge';
 import BusinessOverview from '../components/BusinessOverview';
 import useBusinessTrips from '../hooks/useBusinessTrips';
+import useCompanyAccess from '../hooks/useCompanyAccess';
 
 import {
   SafeAreaView,
@@ -18,7 +19,8 @@ import {
 
 export default function HomeScreen({ navigation, route }) {
   const usuario = route?.params?.usuario;
-  const { idioma, notificaciones, modoViajaYa } = useApp();
+  useCompanyAccess(usuario?.idUsuario);
+  const { idioma, notificaciones, modoViajaYa, setEmpresa, cambiarModoViajaYa } = useApp();
   const business = modoViajaYa === 'business';
   const businessState = useBusinessTrips(business, usuario?.idUsuario);
   const [motivoViaje, setMotivoViaje] = useState('');
@@ -357,7 +359,10 @@ export default function HomeScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+        <TouchableOpacity onPress={() => {
+          setAuthToken(null); setEmpresa(null); cambiarModoViajaYa('personal');
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        }}>
           <Text style={estilos.cerrarSesion}>Cerrar sesion</Text>
         </TouchableOpacity>
       </ScrollView>

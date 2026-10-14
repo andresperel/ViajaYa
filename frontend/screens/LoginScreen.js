@@ -16,11 +16,13 @@ import {
 
 import { apiFetch, setAuthToken } from '../services/api';
 import { supabase } from '../services/supabase';
+import { useApp } from '../context/AppContext';
 
 WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_REDIRECT_URL = 'viajaya://auth/callback';
 
 export default function LoginScreen({ navigation, route }) {
+  const { setEmpresa, cambiarModoViajaYa } = useApp();
   useEffect(() => {
     if (route.params?.googleError) setMensajeEnPantalla(route.params.googleError);
   }, [route.params?.googleError]);
@@ -29,6 +31,8 @@ export default function LoginScreen({ navigation, route }) {
   const [mensajeEnPantalla, setMensajeEnPantalla] = useState('');
 
   const navegarConSesion = (datosRecibidos) => {
+    setEmpresa(null);
+    cambiarModoViajaYa('personal');
     setAuthToken(datosRecibidos.token);
     navigation.navigate('Home', {
       usuario: datosRecibidos.usuario,

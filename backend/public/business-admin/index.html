@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ViajaYa Business · Administración</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><strong>ViajaYa <span>Business</span></strong><button id="logout" hidden>Cerrar sesión</button></header>
+<main>
+<section id="login"><h1>Administración de empresas</h1><p>Accedé para gestionar empleados y consultar el uso corporativo.</p><form id="loginForm"><label>Correo<input id="email" type="email" required autocomplete="username"></label><label>Contraseña<input id="password" type="password" required autocomplete="current-password"></label><button>Ingresar</button></form></section>
+<div id="panel" hidden>
+<h1>Empresas</h1><form id="companyForm"><label>Nombre de la empresa<input id="companyName" required minlength="2" maxlength="100"></label><button>Crear empresa</button></form>
+<div class="layout"><aside><h2>Seleccioná una empresa</h2><div id="companies"></div></aside><section id="detail" hidden>
+<h2 id="companyTitle"></h2><button id="refresh">Actualizar estadísticas</button><p>Código para empleados: <strong id="code"></strong></p><p>Compartí este código con los empleados cuyos correos hayas autorizado.</p>
+<div id="stats" class="stats"></div>
+<h3>Autorizar empleado</h3><form id="memberForm"><label>Correo del empleado<input id="memberEmail" type="email" maxlength="100" required></label><button>Agregar correo</button></form>
+<h3>Empleados</h3><p>Activo significa habilitado para acceder y guardar viajes corporativos. El gasto estimado excluye viajes cancelados.</p>
+<div class="table"><table><thead><tr><th>Correo</th><th>Acceso</th><th>Vinculación</th><th>Último ingreso por código</th><th>Viajes</th><th>Realizados</th><th>Gasto estimado</th><th>Acción</th></tr></thead><tbody id="members"></tbody></table></div>
+</section></div></div>
+<p id="message" role="status" aria-live="polite"></p>
+</main><script src="app.js"></script></body></html>

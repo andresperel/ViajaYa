@@ -5,3 +5,7 @@ backend/ngrok.local.yml
 *.log
 .verification/
 frontend/.expo-business-export/
+frontend-business/dist/
+frontend-business/*.tsbuildinfo
+frontend-business/.env.*.local
+frontend-business/test-results/

@@ -293,4 +293,4 @@ async function calcularViaje(req, res) {
   }
 }
 
-module.exports = { calcularViaje, buscarSugerencias };
+module.exports = { calcularViaje, buscarSugerencias, crearOpciones };

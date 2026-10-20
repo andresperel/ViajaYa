@@ -1,11 +1,10 @@
 const express = require('express');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const db = require('../config/supabase');
 const { requireAuth } = require('../middlewares/authMiddleware');
 const router = express.Router();
-const ADMIN_EMAIL = 'admin@viajaya.com';
-const ADMIN_PASSWORD = 'ViajaYaAdmin2026!';
 const wrap = (fn) => async (req, res) => {
   try { await fn(req, res); } catch (error) {
     console.error('Business:', error.message);
@@ -14,6 +13,7 @@ const wrap = (fn) => async (req, res) => {
 };
 function result(response) { if (response.error) throw response.error; return response.data; }
 function admin(req, res, next) {
+  if (process.env.LEGACY_BUSINESS_ADMIN_ENABLED !== 'true') return res.status(403).json({ mensaje: 'El panel global anterior está deshabilitado. Usá ViajaYa Business Web.' });
   try {
     const token = (req.headers.authorization || '').replace(/^Bearer /, '');
     jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'], audience: 'viajaya-admin', issuer: 'viajaya-business' });
@@ -21,7 +21,11 @@ function admin(req, res, next) {
   } catch { res.status(401).json({ mensaje: 'Iniciá sesión como administrador.' }); }
 }
 router.post('/business/admin/login', wrap(async (req, res) => {
-  if (req.body?.email !== ADMIN_EMAIL || req.body?.password !== ADMIN_PASSWORD) return res.status(401).json({ mensaje: 'Credenciales incorrectas.' });
+  if (process.env.LEGACY_BUSINESS_ADMIN_ENABLED !== 'true') return res.status(403).json({ mensaje: 'El panel global anterior está deshabilitado. Usá ViajaYa Business Web.' });
+  const valid = process.env.LEGACY_BUSINESS_ADMIN_PASSWORD_HASH && typeof req.body?.password === 'string'
+    && req.body.email === process.env.LEGACY_BUSINESS_ADMIN_EMAIL
+    && await bcrypt.compare(req.body.password, process.env.LEGACY_BUSINESS_ADMIN_PASSWORD_HASH);
+  if (!valid) return res.status(401).json({ mensaje: 'Credenciales incorrectas.' });
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) throw new Error('JWT_SECRET inválido');
   res.json({ token: jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '2h', audience: 'viajaya-admin', issuer: 'viajaya-business' }) });
 }));
@@ -56,7 +60,8 @@ router.patch('/business/admin/usuarios/:id', admin, wrap(async (req, res) => {
 }));
 router.get('/business/mi-empresa', requireAuth, wrap(async (req, res) => {
   const miembro = result(await db.from('EmpresaUsuario').select('*,EmpresaCorporativa(*)').eq('usuarioId', req.auth.userId).maybeSingle());
-  res.json({ empresa: miembro?.activo ? miembro.EmpresaCorporativa : null, inactivo: Boolean(miembro && !miembro.activo) });
+  const disponible = miembro?.activo && miembro.EmpresaCorporativa?.activa !== false;
+  res.json({ empresa: disponible ? miembro.EmpresaCorporativa : null, inactivo: Boolean(miembro && !disponible) });
 }));
 router.post('/business/acceder', requireAuth, wrap(async (req, res) => {
   const codigo = typeof req.body?.codigo === 'string' ? req.body.codigo.trim().toUpperCase() : '';

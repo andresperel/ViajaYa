@@ -3,6 +3,10 @@ const assert = require('node:assert/strict');
 const { resolve } = require('node:path');
 const jwt = require('jsonwebtoken');
 process.env.JWT_SECRET = 'test-secret-for-business-at-least-32-characters';
+// Legacy panel is opt-in; these credentials are fixtures, never application defaults.
+process.env.LEGACY_BUSINESS_ADMIN_ENABLED = 'true';
+process.env.LEGACY_BUSINESS_ADMIN_EMAIL = 'admin@viajaya.com';
+process.env.LEGACY_BUSINESS_ADMIN_PASSWORD_HASH = require('bcrypt').hashSync('ViajaYaAdmin2026!', 4);
 const dbPath = resolve(__dirname, '../src/config/supabase.js');
 let responses = [];
 const queries = [];
@@ -25,7 +29,7 @@ async function access(results, body = { codigo: ' ABC ' }) {
   responses = results.map(data => ({ data, error: null })); queries.length = 0;
   const res = response(); await handler('/business/acceder')({ body, auth: { userId: 42, email: 'stale@example.com' } }, res); return res;
 }
-test('admin hardcodeado emite un token exclusivo del panel', async () => {
+test('admin legacy configurado explícitamente emite un token exclusivo del panel', async () => {
   const res = response(); await handler('/business/admin/login')({ body: { email: 'admin@viajaya.com', password: 'ViajaYaAdmin2026!' } }, res);
   const payload = jwt.verify(res.data.token, process.env.JWT_SECRET, { audience: 'viajaya-admin', issuer: 'viajaya-business' });
   assert.equal(payload.role, 'admin');

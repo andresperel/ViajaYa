@@ -339,6 +339,15 @@ async function socialLogin(req, res) {
       return res.status(400).json({ mensaje: 'Proveedor invalido.' });
     }
 
+    // Mobile currently sends only an Apple email/name, not a verifiable identity
+    // token. Fail closed before any account lookup or creation. Keep Google and
+    // password authentication unchanged. See docs/BUSINESS-WEB.md for restoration.
+    if (providerLimpio === 'apple') {
+      return res.status(403).json({
+        mensaje: 'El inicio de sesión con Apple está temporalmente deshabilitado hasta incorporar una verificación segura. Usá email y contraseña o Google.',
+      });
+    }
+
     let emailSocial = emailBody;
     let nombreSocial = nombreBody;
 

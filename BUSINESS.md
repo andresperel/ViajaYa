@@ -1,8 +1,10 @@
 # ViajaYa Business
 
+> Documento histórico del panel anterior. La implementación actual es [ViajaYa Business Web](docs/BUSINESS-WEB.md), en `frontend-business/`. El administrador global está deshabilitado por defecto y sus credenciales de demostración fueron retiradas. Las verificaciones remotas descritas abajo pertenecen a una entrega anterior: no se repitieron ni acreditan el esquema remoto actual. No ejecutar comandos de migración o smoke contra Supabase sin revisión y aprobación.
+
 El panel Desktop se sirve desde el backend: `http://localhost:3000/business-admin/` (reemplazar 3000 por el puerto configurado).
 
-Administrador hardcodeado para la demostración: `admin@viajaya.com`, contraseña `ViajaYaAdmin2026!`. La sesión dura dos horas. Estas credenciales son de la demo y deben reemplazarse antes de publicar en producción.
+El login de demostración fue retirado. El panel anterior no debe utilizarse como administrador empresarial; el acceso opcional de mantenimiento requiere habilitación y credenciales configuradas explícitamente en el servidor.
 
 ## Estado verificado
 

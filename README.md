@@ -1,5 +1,13 @@
 # ViajaYa — React Context y React Hook Form
 
+## ViajaYa Business Web
+
+El frontend empresarial independiente está en `frontend-business/` (React, TypeScript y Vite). Comparte las cuentas y la API Express, con sesiones web, empresas, roles, invitaciones, comparación, historial y dashboard. La aplicación Expo permanece en `frontend/`.
+
+Ver [documentación de Business Web](docs/BUSINESS-WEB.md) para ejecución, variables, pruebas, límites de proveedores, bloqueo temporal autorizado de Apple y migraciones completas pendientes de revisión. **No aplicar migraciones ni ejecutar scripts remotos sin aprobación.**
+
+Para probar el flujo completo sin credenciales ni datos remotos: ejecutar `npm --prefix backend run start:business-local` y, en otra terminal, `npm --prefix frontend-business run dev`. Abrir **http://localhost:5173**. Es una base desechable vacía con buzón de prueba en `/__local/mail` y rutas simuladas; no confirma reservas ni envía emails reales. Ver [estado de la verificación y configuración pendiente](docs/BUSINESS-STATUS.md).
+
 ## Trabajo práctico: React Context
 
 Repositorio: [andresperel/ViajaYa](https://github.com/andresperel/ViajaYa).

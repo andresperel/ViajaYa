@@ -10,7 +10,13 @@ const webhookRoutes = require('./routes/webhookRoutes');
 
 const app = express();
 
-app.use(cors());
+// Legacy CORS remains unchanged for Mobile. Business has its own explicit allowlist.
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api/business')) return cors()(req, res, next);
+  const allowed = require('./business/security').origins();
+  return cors({ origin: (origin, callback) => callback(null, Boolean(origin && allowed.includes(origin))), credentials: true, methods: ['GET', 'POST', 'PATCH', 'OPTIONS'], allowedHeaders: ['Content-Type', 'X-CSRF-Token'] })(req, res, next);
+});
+app.use('/api/business', express.json({ limit: '32kb' }));
 app.use(express.json({
   verify: (req, res, buffer) => {
     req.rawBody = buffer;
@@ -57,6 +63,7 @@ app.get('/descargar-apk', (req, res) => {
 });
 
 app.use('/', authRoutes);
+app.use('/api/business', require('./business/router'));
 app.use('/', require('./routes/businessRoutes'));
 app.use('/business-admin', express.static(path.join(__dirname, '../public/business-admin')));
 app.use('/', viajeRoutes);

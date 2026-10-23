@@ -50,12 +50,12 @@ export function AuthPage({ register: signup = false }: { register?: boolean }) {
         setMessage("Cuenta creada. Iniciá sesión con tu correo y contraseña.");
       } else {
         await api("/auth/login", "POST", {
-          email: values.email.trim().toLowerCase(),
+          username: values.email.trim(),
           password: values.password,
         });
         await refresh();
         navigate(
-          sessionStorage.getItem("business-invitation") ? "/invitacion" : "/",
+          "/dashboard",
         );
       }
     } catch (e) {
@@ -152,21 +152,21 @@ export function AuthPage({ register: signup = false }: { register?: boolean }) {
                   </>
                 )}
                 <label>
-                  Correo electrónico
+                  {signup ? "Correo electrónico" : "Usuario administrador"}
                   <input
-                    type="email"
-                    autoComplete="email"
+                    type={signup ? "email" : "text"}
+                    autoComplete={signup ? "email" : "username"}
                     maxLength={100}
-                    placeholder="vos@tuempresa.com"
+                    placeholder={signup ? "vos@tuempresa.com" : "admin1"}
                     {...register("email", {
-                      required: "Ingresá tu correo.",
-                      pattern: {
+                      required: signup ? "Ingresá tu correo." : "Ingresá tu usuario.",
+                      ...(signup ? { pattern: {
                         value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                         message: "Ingresá un correo válido.",
-                      },
+                      } } : {}),
                     })}
                   />
-                  <small className="field-error">{errors.email?.message}</small>
+                    <small className="field-error">{errors.email?.message}</small>
                 </label>
                 <label>
                   Contraseña
@@ -223,12 +223,7 @@ export function AuthPage({ register: signup = false }: { register?: boolean }) {
               </fieldset>
             </form>
           )}
-          <p className="auth-switch">
-            {signup ? "¿Ya tenés cuenta?" : "¿Todavía no tenés cuenta?"}{" "}
-            <Link to={signup ? "/login" : "/registro"}>
-              {signup ? "Iniciá sesión" : "Registrate"}
-            </Link>
-          </p>
+          {signup && <p className="auth-switch">El registro web está deshabilitado.</p>}
         </div>
       </section>
     </main>

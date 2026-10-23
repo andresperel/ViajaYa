@@ -114,7 +114,7 @@ export default function PerfilScreen({ navigation, route }) {
           <TouchableOpacity style={estilos.botonSecundario} accessibilityRole="link" onPress={abrirPanelEmpresas}>
             <Text style={estilos.textoBotonSecundario}>{ingles ? 'Manage companies' : 'Administrar empresas'}</Text>
           </TouchableOpacity>
-          <Text style={estilos.email}>{ingles ? 'Administrators: open the web panel to create companies, obtain their codes and manage employees.' : 'Administradores: abrí el panel web para crear empresas, obtener sus códigos y gestionar empleados.'}</Text>
+          <Text style={estilos.email}>{ingles ? 'Administrators: open the web panel to manage employees. Access is granted by the email on their ViajaYa account.' : 'Administradores: abrí el panel web para gestionar empleados. El acceso se habilita con el correo de su cuenta ViajaYa.'}</Text>
           {!!errorPanel && <Text accessibilityRole="alert" style={{ color: '#FCA5A5', marginTop: 10 }}>{errorPanel}</Text>}
           {business && <TouchableOpacity style={estilos.botonSecundario} onPress={() => navigation.navigate('DashboardBusiness', { usuario })}><Text style={estilos.textoBotonSecundario}>Dashboard Business</Text></TouchableOpacity>}
         </View>

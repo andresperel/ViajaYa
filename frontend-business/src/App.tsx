@@ -5,8 +5,6 @@ import { TripFlowProvider } from "./flow";
 import { Brand, ErrorBox } from "./ui";
 import {
   AuthPage,
-  CompanyRegistration,
-  InvitationPage,
   Settings,
 } from "./pages/account";
 import {
@@ -18,14 +16,6 @@ import {
 } from "./pages/trips";
 import { Employees } from "./pages/employees";
 
-// Invitation secrets travel in URL fragments, never in server access logs.
-if (
-  window.location.pathname === "/invitacion" &&
-  /^[A-Za-z0-9_-]{43}$/.test(window.location.hash.slice(1))
-) {
-  sessionStorage.setItem("business-invitation", window.location.hash.slice(1));
-  window.history.replaceState(null, "", "/invitacion");
-}
 function RequireLogin() {
   return useAuth().context ? <Outlet /> : <Navigate to="/login" replace />;
 }
@@ -161,14 +151,8 @@ export default function App() {
       </a>
       <Routes>
         <Route path="/login" element={<AuthPage key="login" />} />
-        <Route
-          path="/registro"
-          element={<AuthPage key="register" register />}
-        />
         <Route element={<RequireLogin />}>
           <Route element={<Layout />}>
-            <Route path="/empresa/registro" element={<CompanyRegistration />} />
-            <Route path="/invitacion" element={<InvitationPage />} />
             <Route path="/configuracion" element={<Settings />} />
             <Route element={<RequireMember />}>
               <Route index element={<Home />} />

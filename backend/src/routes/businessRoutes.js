@@ -59,9 +59,27 @@ router.patch('/business/admin/usuarios/:id', admin, wrap(async (req, res) => {
   res.json(usuario);
 }));
 router.get('/business/mi-empresa', requireAuth, wrap(async (req, res) => {
-  const miembro = result(await db.from('EmpresaUsuario').select('*,EmpresaCorporativa(*)').eq('usuarioId', req.auth.userId).maybeSingle());
-  const disponible = miembro?.activo && miembro.EmpresaCorporativa?.activa !== false;
-  res.json({ empresa: disponible ? miembro.EmpresaCorporativa : null, inactivo: Boolean(miembro && !disponible) });
+  const usuario = result(await db.from('Usuario').select('idUsuario,email').eq('idUsuario', req.auth.userId).maybeSingle());
+  if (!usuario?.email) return res.json({ empresa: null, inactivo: false });
+  let miembro = result(await db.from('EmpresaUsuario')
+    .select('id,usuarioId,empresaId,activo,fechaAcceso,EmpresaCorporativa(id,nombre,activa)')
+    .eq('email', usuario.email.trim().toLowerCase()).maybeSingle());
+  const empresaActiva = miembro?.activo && miembro.EmpresaCorporativa?.activa !== false;
+  if (!empresaActiva) return res.json({ empresa: null, inactivo: Boolean(miembro) });
+  if (miembro.usuarioId && String(miembro.usuarioId) !== String(req.auth.userId))
+    return res.json({ empresa: null, inactivo: true });
+  if (!miembro.usuarioId) {
+    const actualizado = result(await db.from('EmpresaUsuario')
+      .update({ usuarioId: req.auth.userId, fechaAcceso: new Date().toISOString() })
+      .eq('id', miembro.id).eq('activo', true).is('usuarioId', null)
+      .select('id,usuarioId,empresaId,activo,fechaAcceso,EmpresaCorporativa(id,nombre,activa)').maybeSingle());
+    miembro = actualizado || result(await db.from('EmpresaUsuario')
+      .select('id,usuarioId,empresaId,activo,fechaAcceso,EmpresaCorporativa(id,nombre,activa)')
+      .eq('id', miembro.id).maybeSingle());
+  }
+  const vinculada = miembro?.activo && String(miembro.usuarioId) === String(req.auth.userId)
+    && miembro.EmpresaCorporativa?.activa !== false;
+  res.json({ empresa: vinculada ? miembro.EmpresaCorporativa : null, inactivo: Boolean(miembro && !vinculada) });
 }));
 router.post('/business/acceder', requireAuth, wrap(async (req, res) => {
   const codigo = typeof req.body?.codigo === 'string' ? req.body.codigo.trim().toUpperCase() : '';

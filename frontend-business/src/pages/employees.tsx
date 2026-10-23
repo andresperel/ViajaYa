@@ -42,12 +42,10 @@ export function Employees() {
     setError("");
     setMessage("");
     try {
-      await api("/invitaciones", "POST", values);
+      await api("/empleados", "POST", { email: values.email.trim().toLowerCase() });
       reset();
-      invitations.refresh();
-      setMessage(
-        "Invitación enviada. El destinatario debe abrir el enlace e iniciar sesión con ese correo.",
-      );
+      employees.refresh();
+      setMessage("Usuario habilitado. Podrá iniciar sesión en la app con este mismo correo para acceder a Business.");
     } catch (e) {
       setError((e as Error).message);
     }
@@ -90,10 +88,9 @@ export function Employees() {
       <ErrorBox message={error} />
       {message && <Notice>{message}</Notice>}
       <section className="card">
-        <h2>Invitar a una persona</h2>
+        <h2>Dar de alta un usuario</h2>
         <p className="muted">
-          Recibirá un enlace personal válido por 72 horas. No tendrá acceso
-          hasta que lo acepte.
+          El correo debe coincidir con la cuenta con la que iniciará sesión en la aplicación móvil.
         </p>
         <form
           onSubmit={handleSubmit(invite)}
@@ -117,15 +114,8 @@ export function Employees() {
               />
               <small className="field-error">{errors.email?.message}</small>
             </label>
-            <label>
-              Rol
-              <select {...register("rol")}>
-                <option value="empleado">Empleado</option>
-                <option value="administrador">Administrador</option>
-              </select>
-            </label>
             <button type="submit">
-              {isSubmitting ? "Enviando…" : "Enviar invitación ↗"}
+              {isSubmitting ? "Guardando…" : "Habilitar usuario →"}
             </button>
           </fieldset>
         </form>
@@ -188,8 +178,8 @@ export function Employees() {
                           <strong>{e.email}</strong>
                           <small>
                             {e.usuarioId
-                              ? "Cuenta vinculada"
-                              : "Asociación anterior sin cuenta vinculada"}
+                              ? "Cuenta móvil vinculada"
+                              : "Pendiente de vinculación móvil"}
                           </small>
                         </td>
                         <td>

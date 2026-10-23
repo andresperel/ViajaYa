@@ -1,6 +1,5 @@
 const express = require("express");
 const db = require("../config/supabase");
-const auth = require("../controllers/authController");
 const routes = require("../controllers/routeController");
 const {
   hash,
@@ -16,6 +15,8 @@ const {
 const { providerContinuation } = require("./providers");
 const mail = require("./email");
 const router = express.Router();
+const DEMO_ADMIN_USERNAME = "admin1";
+const DEMO_ADMIN_PASSWORD = "ViajaYaAdmin2026!";
 const USER_FIELDS = "idUsuario,nombre,email,telefono,fechaRegistro";
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -142,6 +143,8 @@ const authenticated = wrap(async (req, res, next) => {
       .maybeSingle(),
   );
   if (!user) throw new HttpError(401, "La cuenta ya no está disponible.");
+  if (user.email?.trim().toLowerCase() !== (process.env.BUSINESS_DEMO_MEMBER_EMAIL || "").trim().toLowerCase())
+    throw new HttpError(403, "El acceso web está reservado al administrador de demostración.");
   req.webUser = user;
   req.sessionHash = hash(token);
   next();
@@ -169,59 +172,28 @@ function administrator(req, res, next) {
     });
   next();
 }
-// Reuse existing account validation/hashing without returning a Mobile JWT to the browser.
-async function existingController(controller, body) {
-  let status = 200;
-  let payload;
-  await controller(
-    { body },
-    {
-      status(value) {
-        status = value;
-        return this;
-      },
-      json(value) {
-        payload = value;
-        return this;
-      },
-    },
-  );
-  if (status >= 400)
-    throw new HttpError(
-      status,
-      payload?.mensaje || "No se pudo completar la autenticación.",
-    );
-  return payload;
-}
 router.use(boundary);
 router.get("/auth/csrf", csrf);
-router.post(
-  "/auth/register",
-  limiter({ max: 8 }),
-  wrap(async (req, res) => {
-    if (typeof req.body.password !== "string" || req.body.password.length < 8)
-      throw new HttpError(
-        400,
-        "La contraseña debe tener al menos 8 caracteres.",
-      );
-    const data = await existingController(auth.register, req.body);
-    res.status(201).json({
-      usuario: data.usuario,
-      mensaje: "Cuenta creada. Ya podés iniciar sesión.",
-    });
-  }),
-);
+router.post("/auth/register", (_req, res) => res.status(403).json({ mensaje: "El acceso web es exclusivo del administrador de demostración." }));
 router.post(
   "/auth/login",
   limiter({ max: 10 }),
   wrap(async (req, res) => {
-    const data = await existingController(auth.login, req.body);
+    if (req.body?.username !== DEMO_ADMIN_USERNAME || req.body?.password !== DEMO_ADMIN_PASSWORD)
+      throw new HttpError(401, "Credenciales incorrectas.");
+    const memberEmail = (process.env.BUSINESS_DEMO_MEMBER_EMAIL || "").trim().toLowerCase();
+    if (!memberEmail) throw new HttpError(503, "Falta configurar la cuenta administradora existente de Supabase.");
+    const membership = result(await db.from("EmpresaUsuario").select("usuarioId,rol,activo,EmpresaCorporativa(activa)").eq("email", memberEmail).eq("rol", "administrador").eq("activo", true).maybeSingle());
+    if (!membership?.usuarioId || !membership.EmpresaCorporativa?.activa)
+      throw new HttpError(403, "El administrador de demostración no tiene una empresa activa vinculada.");
+    const user = result(await db.from("Usuario").select(USER_FIELDS).eq("idUsuario", membership.usuarioId).maybeSingle());
+    if (!user) throw new HttpError(403, "La cuenta de la membresía administradora no está disponible.");
     const token = random();
     const expira = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
     result(
       await db.from("BusinessSesion").insert({
         tokenHash: hash(token),
-        usuarioId: data.usuario.idUsuario,
+        usuarioId: user.idUsuario,
         expira,
       }),
     );
@@ -234,7 +206,7 @@ router.post(
           .eq("tokenHash", hash(previous)),
       );
     setCookie(res, "session", token, 8 * 60 * 60 * 1000);
-    res.json({ usuario: data.usuario });
+    res.json({ usuario: user });
   }),
 );
 router.use(authenticated);
@@ -292,12 +264,7 @@ router.post(
 router.post(
   "/invitaciones/aceptar",
   limiter({ max: 10 }),
-  wrap(async (req, res) => {
-    const token = text(req.body.token, 43, 43, "Invitación");
-    res.json(
-      await command(req, "aceptar_invitacion", { tokenHash: hash(token) }),
-    );
-  }),
+  (_req, res) => res.status(403).json({ mensaje: "La web no acepta invitaciones ni crea administradores." }),
 );
 router.use(member);
 router.patch(
@@ -338,17 +305,37 @@ router.get(
     });
   }),
 );
+router.post(
+  "/empleados",
+  administrator,
+  wrap(async (req, res) => {
+    const email = text(req.body.email, 3, 100, "Email").toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw new HttpError(400, "Email inválido.");
+    const response = await db.from("EmpresaUsuario").insert({
+      empresaId: req.membership.empresaId,
+      email,
+      rol: "empleado",
+    }).select("id,email,rol,activo,usuarioId,fechaAcceso").single();
+    if (response.error?.code === "23505")
+      throw new HttpError(409, "El correo ya está asociado a una empresa.");
+    res.status(201).json(result(response));
+  }),
+);
 router.patch(
   "/empleados/:id",
   administrator,
   wrap(async (req, res) => {
     if (typeof req.body.activo !== "boolean")
       throw new HttpError(400, "Indicá si el acceso está activo.");
+    const target = result(await db.from("EmpresaUsuario").select("id,rol").eq("id", uuid(req.params.id)).eq("empresaId", req.membership.empresaId).maybeSingle());
+    if (!target || target.rol !== "empleado")
+      throw new HttpError(404, "El usuario no existe o no está disponible.");
     res.json(
       await command(req, "actualizar_miembro", {
         id: uuid(req.params.id),
         activo: req.body.activo,
-        rol: role(req.body.rol),
+        rol: "empleado",
       }),
     );
   }),
@@ -379,6 +366,7 @@ router.post(
   administrator,
   limiter({ max: 10 }),
   wrap(async (req, res) => {
+    return res.status(403).json({ mensaje: "La web no admite invitaciones ni crea administradores." });
     if (!mail.configured())
       throw new HttpError(
         503,

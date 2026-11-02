@@ -107,3 +107,9 @@ Para verificar manualmente en un dispositivo:
 8. Abrir el teclado y desplazarse hasta contraseña, términos y botón en una pantalla pequeña.
 
 También se corrigió el import inicial `./App` a `./app` para que coincida con el archivo existente y Metro pueda resolverlo.
+
+## Configuración y acceso móvil
+
+Copiar `frontend/.env.example` a `frontend/.env` y completar la URL del proyecto Supabase y su clave publicable. Para abrir la app en un navegador de la misma computadora, `EXPO_PUBLIC_API_URL` puede apuntar a `http://localhost:3000`. Para un teléfono físico, debe apuntar a la IP de red local de la computadora; el teléfono y la computadora tienen que estar en la misma red. No subir `frontend/.env` ni `backend/.env`: contienen configuración local y están excluidos por Git. La clave secreta de Supabase solo va en `backend/.env`.
+
+Iniciar el backend con `npm --prefix backend start` y, en otra terminal, Expo Go con `npm --prefix frontend start -- --lan --go`. El acceso Business móvil se activa al iniciar sesión con una cuenta ViajaYa cuyo mismo email tenga una membresía Business activa; los demás usuarios permanecen en modo personal. El backend comprueba la membresía.

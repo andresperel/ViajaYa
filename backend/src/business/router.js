@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 const db = require("../config/supabase");
 const routes = require("../controllers/routeController");
 const {
@@ -15,9 +16,12 @@ const {
 const { providerContinuation } = require("./providers");
 const mail = require("./email");
 const router = express.Router();
-const DEMO_ADMIN_USERNAME = "admin1";
-const DEMO_ADMIN_PASSWORD = "ViajaYaAdmin2026!";
 const USER_FIELDS = "idUsuario,nombre,email,telefono,fechaRegistro";
+const PASSWORD_HASH = /^\$2[aby]\$\d{2}\$.{53}$/;
+const localPasswordless = () =>
+  process.env.BUSINESS_WEB_SERVER === "true" &&
+  process.env.NODE_ENV !== "production" &&
+  process.env.HOST === "127.0.0.1";
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 class HttpError extends Error {
@@ -174,19 +178,38 @@ function administrator(req, res, next) {
 }
 router.use(boundary);
 router.get("/auth/csrf", csrf);
+router.get("/auth/config", (_req, res) => {
+  res.set("Cache-Control", "no-store").json({ localPasswordless: localPasswordless() });
+});
 router.post("/auth/register", (_req, res) => res.status(403).json({ mensaje: "El acceso web es exclusivo del administrador de demostración." }));
 router.post(
   "/auth/login",
   limiter({ max: 10 }),
   wrap(async (req, res) => {
-    if (req.body?.username !== DEMO_ADMIN_USERNAME || req.body?.password !== DEMO_ADMIN_PASSWORD)
-      throw new HttpError(401, "Credenciales incorrectas.");
+    const email = typeof req.body?.username === "string"
+      ? req.body.username.trim().toLowerCase()
+      : "";
+    const password = req.body?.password;
+    const passwordless = localPasswordless();
+    if (!email || (!passwordless && (typeof password !== "string" || !password || password.length > 72)))
+      throw new HttpError(401, "Correo o contraseña incorrectos.");
     const memberEmail = (process.env.BUSINESS_DEMO_MEMBER_EMAIL || "").trim().toLowerCase();
     if (!memberEmail) throw new HttpError(503, "Falta configurar la cuenta administradora existente de Supabase.");
-    const membership = result(await db.from("EmpresaUsuario").select("usuarioId,rol,activo,EmpresaCorporativa(activa)").eq("email", memberEmail).eq("rol", "administrador").eq("activo", true).maybeSingle());
+    if (email !== memberEmail) throw new HttpError(401, "Correo o contraseña incorrectos.");
+    const membership = result(await db.from("EmpresaUsuario").select("usuarioId,rol,activo,EmpresaCorporativa(activa)").eq("email", email).eq("rol", "administrador").eq("activo", true).maybeSingle());
     if (!membership?.usuarioId || !membership.EmpresaCorporativa?.activa)
-      throw new HttpError(403, "El administrador de demostración no tiene una empresa activa vinculada.");
+      throw new HttpError(403, "Esta cuenta no tiene una empresa activa vinculada como administradora.");
     const user = result(await db.from("Usuario").select(USER_FIELDS).eq("idUsuario", membership.usuarioId).maybeSingle());
+    if (!user || user.email?.trim().toLowerCase() !== email)
+      throw new HttpError(401, "Correo o contraseña incorrectos.");
+    if (!passwordless) {
+      const passwordRow = result(await db.from("Usuario").select("contraseña").eq("idUsuario", user.idUsuario).maybeSingle());
+      const storedPassword = passwordRow?.["contraseña"] || "";
+      const validPassword = PASSWORD_HASH.test(storedPassword)
+        ? await bcrypt.compare(password, storedPassword)
+        : password === storedPassword;
+      if (!validPassword) throw new HttpError(401, "Correo o contraseña incorrectos.");
+    }
     if (!user) throw new HttpError(403, "La cuenta de la membresía administradora no está disponible.");
     const token = random();
     const expira = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();

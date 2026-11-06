@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const authRoutes = require('./routes/authRoutes');
 const viajeRoutes = require('./routes/viajeRoutes');
@@ -9,6 +10,8 @@ const routeRoutes = require('./routes/routeRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
 
 const app = express();
+const businessDist = path.resolve(__dirname, '../../frontend-business/dist');
+const businessIndex = path.join(businessDist, 'index.html');
 
 // Legacy CORS remains unchanged for Mobile. Business has its own explicit allowlist.
 app.use((req, res, next) => {
@@ -23,7 +26,12 @@ app.use(express.json({
   },
 }));
 
-app.get('/', (req, res) => {
+app.get('/', (req, res, next) => {
+  if (process.env.BUSINESS_WEB_SERVER === 'true' && fs.existsSync(businessIndex)) {
+    return res.sendFile(businessIndex, (error) => {
+      if (error && !res.headersSent) next(error);
+    });
+  }
   res.json({ servicio: 'ViajaYa API', estado: 'ok' });
 });
 
@@ -70,5 +78,19 @@ app.use('/', viajeRoutes);
 app.use('/', uberRoutes);
 app.use('/', routeRoutes);
 app.use('/', webhookRoutes);
+
+// Serve the compiled Business SPA only in the dedicated Business web process.
+if (process.env.BUSINESS_WEB_SERVER === 'true') {
+  app.use(express.static(businessDist, { index: false }));
+  app.get('*', (req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api/') || req.path.startsWith('/business/')) {
+      return next();
+    }
+    if (!fs.existsSync(businessIndex)) return next();
+    res.sendFile(businessIndex, (error) => {
+      if (error && !res.headersSent) next(error);
+    });
+  });
+}
 
 module.exports = app;

@@ -6,6 +6,38 @@ El frontend empresarial independiente está en `frontend-business/` (React, Type
 
 Ver [documentación de Business Web](docs/BUSINESS-WEB.md) para ejecución, variables, pruebas, límites de proveedores, bloqueo temporal autorizado de Apple y migraciones completas pendientes de revisión. **No aplicar migraciones ni ejecutar scripts remotos sin aprobación.**
 
+## Inicio rapido local
+
+### Business web
+
+Desde la raiz del repositorio (`C:\Users\devandroid\Downloads\ViajaYa`), ejecuta:
+
+```cmd
+npm --prefix backend run start:business-web
+```
+
+Si la terminal ya esta dentro de `backend`, usa `npm run start:business-web`. El comando compila `frontend-business` y levanta la web y su API juntas en **http://localhost:5174**. No hace falta iniciar Vite por separado, ni abrir el puerto 3000 para Business. Deja esa terminal abierta; `Ctrl+C` detiene el servidor. Si aparece `EADDRINUSE`, cierra con `Ctrl+C` el proceso anterior que ocupa el puerto.
+
+En el acceso local, inicia sesion con el correo administrador configurado en `backend/.env`; este modo local no pide contrasena. No uses ese acceso fuera de la computadora local.
+
+### App Mobile
+
+Mobile es la app Expo que vive en `frontend/`. Para iniciarla, abre dos terminales desde la raiz del repositorio:
+
+```cmd
+npm --prefix backend start
+```
+
+```cmd
+npm --prefix frontend start -- --lan --go
+```
+
+El backend Mobile escucha en el puerto 3000. En un telefono fisico, `EXPO_PUBLIC_API_URL` de `frontend/.env` debe usar la IP local de la computadora (por ejemplo, `http://192.168.1.10:3000`), no `localhost`. Al iniciar sesion en Mobile con un correo que tenga una membresia Business activa, la app activa el modo Business automaticamente.
+
+Si es la primera ejecucion en una maquina nueva y faltan dependencias, instala desde la raiz con `npm --prefix backend ci`, `npm --prefix frontend-business ci` y, para Mobile, `npm --prefix frontend ci`.
+
+Los archivos `backend/.env` y `frontend/.env` guardan configuracion local y estan excluidos de Git. No los agregues al commit ni al push.
+
 Para probar el flujo completo sin credenciales ni datos remotos: ejecutar `npm --prefix backend run start:business-local` y, en otra terminal, `npm --prefix frontend-business run dev`. Abrir **http://localhost:5173**. Es una base desechable vacía con buzón de prueba en `/__local/mail` y rutas simuladas; no confirma reservas ni envía emails reales. Ver [estado de la verificación y configuración pendiente](docs/BUSINESS-STATUS.md).
 
 ## Trabajo práctico: React Context

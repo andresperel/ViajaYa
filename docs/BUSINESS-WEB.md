@@ -69,6 +69,16 @@ Abrir **http://localhost:5173**. Vite escucha en loopback y reenvía `/api/busin
 
 Copiar solo las variables necesarias de `backend/.env.business.example` al entorno privado existente, sin sobrescribir sus secretos. `frontend-business/.env.example` documenta `VITE_API_URL`; dejar vacío con el proxy. Nunca poner claves Supabase privilegiadas, claves de correo, JWT ni claves de mapas en variables `VITE_*`.
 
+## Ejecucion local compilada sin Vite
+
+Desde la raiz del repositorio, ejecutar:
+
+```powershell
+npm --prefix backend run start:business-web
+```
+
+Este comando compila frontend-business y sirve la web y su API desde Express en http://localhost:5174. El backend normal de Mobile sigue disponible en el puerto 3000.
+
 ## Variables
 
 | Nombre | Uso |

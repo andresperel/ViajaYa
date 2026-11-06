@@ -4,7 +4,8 @@
   "main": "src/server.js",
   "scripts": {
     "start:business-local": "node dev/startBusinessLocal.cjs",
-    "check:business-config": "node scripts/checkBusinessConfiguration.cjs",
+    "start:business-web": "npm --prefix ../frontend-business run build && node --use-system-ca dev/startBusinessWeb.cjs",
+    "check:business-config": "node --use-system-ca scripts/checkBusinessConfiguration.cjs",
     "setup:business-local": "node scripts/setupBusinessLocalConfiguration.cjs",
     "test": "node --test tests/*.test.cjs",
     "test:business-web": "node --test tests/businessWeb*.test.cjs",

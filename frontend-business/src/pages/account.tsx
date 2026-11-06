@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, Navigate, useNavigate } from "react-router";
 import { api } from "../api";
@@ -18,6 +18,20 @@ export function AuthPage({ register: signup = false }: { register?: boolean }) {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [localPasswordless, setLocalPasswordless] = useState<boolean | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    api<{ localPasswordless: boolean }>("/auth/config")
+      .then((config) => {
+        if (mounted) setLocalPasswordless(config.localPasswordless);
+      })
+      .catch(() => {
+        if (mounted) setLocalPasswordless(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
   const {
     register,
     handleSubmit,
@@ -51,7 +65,7 @@ export function AuthPage({ register: signup = false }: { register?: boolean }) {
       } else {
         await api("/auth/login", "POST", {
           username: values.email.trim(),
-          password: values.password,
+          ...(localPasswordless ? {} : { password: values.password }),
         });
         await refresh();
         navigate(
@@ -97,6 +111,9 @@ export function AuthPage({ register: signup = false }: { register?: boolean }) {
               ? "Usá tu cuenta ViajaYa también para trabajar."
               : "Ingresá con tu cuenta de ViajaYa."}
           </p>
+          {!signup && localPasswordless && (
+            <Notice>Acceso local habilitado para el correo administrador configurado.</Notice>
+          )}
           {sessionStorage.getItem("business-invitation") && (
             <Notice>
               Tenés una invitación pendiente. Ingresá con el correo que la
@@ -110,7 +127,7 @@ export function AuthPage({ register: signup = false }: { register?: boolean }) {
             </Notice>
           ) : (
             <form onSubmit={handleSubmit(submit)} noValidate>
-              <fieldset disabled={isSubmitting}>
+              <fieldset disabled={isSubmitting || localPasswordless === null}>
                 {signup && (
                   <>
                     <label>
@@ -152,14 +169,14 @@ export function AuthPage({ register: signup = false }: { register?: boolean }) {
                   </>
                 )}
                 <label>
-                  {signup ? "Correo electrónico" : "Usuario administrador"}
+                  {signup ? "Correo electrónico" : "Correo de administrador"}
                   <input
-                    type={signup ? "email" : "text"}
-                    autoComplete={signup ? "email" : "username"}
+                    type="email"
+                    autoComplete="email"
                     maxLength={100}
-                    placeholder={signup ? "vos@tuempresa.com" : "admin1"}
+                        placeholder="admin@viajaya.com"
                     {...register("email", {
-                      required: signup ? "Ingresá tu correo." : "Ingresá tu usuario.",
+                      required: "Ingresá tu correo.",
                       ...(signup ? { pattern: {
                         value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                         message: "Ingresá un correo válido.",
@@ -168,13 +185,14 @@ export function AuthPage({ register: signup = false }: { register?: boolean }) {
                   />
                     <small className="field-error">{errors.email?.message}</small>
                 </label>
-                <label>
+                {(!localPasswordless || signup) && (
+                  <label>
                   Contraseña
                   <input
                     type="password"
                     autoComplete={signup ? "new-password" : "current-password"}
                     {...register("password", {
-                      required: "Ingresá tu contraseña.",
+                      required: (!localPasswordless || signup) ? "Ingresá tu contraseña." : false,
                       ...(signup
                         ? {
                             minLength: {
@@ -196,6 +214,7 @@ export function AuthPage({ register: signup = false }: { register?: boolean }) {
                     {errors.password?.message}
                   </small>
                 </label>
+                )}
                 {signup && (
                   <label className="checkbox">
                     <input

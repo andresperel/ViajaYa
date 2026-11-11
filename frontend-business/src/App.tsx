@@ -10,8 +10,7 @@ import {
 import {
   Home,
   Results,
-  RequestTrip,
-  TripHistory,
+ 
   Dashboard,
 } from "./pages/trips";
 import { Employees } from "./pages/employees";
@@ -81,12 +80,8 @@ function Layout() {
               <NavLink to="/" end>
                 ⌂ <span>Inicio</span>
               </NavLink>
-              <NavLink to="/solicitar">
-                ↗ <span>Solicitar viaje</span>
-              </NavLink>
-              <NavLink to="/mis-viajes">
-                ≡ <span>Mis viajes</span>
-              </NavLink>
+             
+              
             </>
           )}
           {admin && (
@@ -156,9 +151,9 @@ export default function App() {
             <Route path="/configuracion" element={<Settings />} />
             <Route element={<RequireMember />}>
               <Route index element={<Home />} />
-              <Route path="/solicitar" element={<RequestTrip />} />
+             
               <Route path="/resultados" element={<Results />} />
-              <Route path="/mis-viajes" element={<TripHistory />} />
+             
               <Route element={<RequireAdmin />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/empleados" element={<Employees />} />
